@@ -44,10 +44,15 @@ sans que quelqu'un le change explicitement.
 ## En ligne de commande
 
 ```sh
-go run ./cmd/parse "500 g de beurre demi-sel"
-go run ./cmd/parse --filtre < lignes.txt      # TSV, pour mesurer un corpus
-go run ./cmd/parse --jeu testdata/fr.txt      # l'accord contre le jeu annoté
+go install github.com/Pol128/moteur/cmd/parse@latest
+parse "500 g de beurre demi-sel"              # depuis n'importe quel répertoire
+parse --filtre < lignes.txt                   # TSV, pour mesurer un corpus
+parse --jeu testdata/fr.txt                   # l'accord contre le jeu annoté
 ```
+
+Le binaire lit lui aussi le pack et le lexique embarqués : rien à installer à
+côté. `--pack` et `--aliments` restent là pour en imposer d'autres, et
+`--aliments ""` demande explicitement de lire sans lexique.
 
 ## Licence
 

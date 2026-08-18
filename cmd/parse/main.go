@@ -30,10 +30,46 @@ import (
 	"github.com/Pol128/moteur"
 )
 
+// embarque désigne, pour --aliments, le lexique que le module porte en lui.
+const embarque = "embarqué"
+
+// choisitPack rend le pack embarqué quand --pack n'est pas donné.
+//
+// Un binaire installé par `go install` ne connaît pas le répertoire depuis
+// lequel on l'appelle : lui donner un chemin relatif par défaut le condamnait à
+// ne fonctionner que depuis le dépôt du module.
+func choisitPack(chemin string) (*moteur.Pack, error) {
+	if chemin == "" {
+		return moteur.PackFR()
+	}
+	return moteur.Charge(chemin)
+}
+
+// choisitAliments applique la même règle au lexique, avec un cas de plus : la
+// chaîne vide demande explicitement de s'en passer — c'est ce qui permet de
+// mesurer les deux configurations sans recompiler.
+func choisitAliments(choix string, p *moteur.Pack) (moteur.Aliments, error) {
+	switch choix {
+	case "":
+		return nil, nil
+	case embarque:
+		return moteur.AlimentsFR(p)
+	}
+	charge, err := moteur.ChargeAliments(choix, p)
+	if os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "%s absent : lecture sans lexique\n", choix)
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return charge, nil
+}
+
 func main() {
-	pack := flag.String("pack", "lang/fr.toml", "pack de langue")
-	lexique := flag.String("aliments", "data/foods_fr.json",
-		"lexique d'aliments ; vide pour s'en passer")
+	pack := flag.String("pack", "", "pack de langue ; vide = celui embarqué dans le module")
+	lexique := flag.String("aliments", embarque,
+		"lexique d'aliments ; « "+embarque+" » = celui du module, vide pour s'en passer")
 	filtre := flag.Bool("filtre", false, "lire stdin, écrire un TSV sur stdout")
 	interactif := flag.Bool("interactif", false,
 		"en filtre, rendre chaque ligne aussitôt lue — pour un appelant qui dialogue")
@@ -46,22 +82,14 @@ func main() {
 	infos := flag.Bool("infos", false, "décrire le pack chargé, en JSON")
 	flag.Parse()
 
-	p, err := moteur.Charge(*pack)
+	p, err := choisitPack(*pack)
 	if err != nil {
 		echoue(err)
 	}
 
-	var aliments moteur.Aliments
-	if *lexique != "" {
-		charge, err := moteur.ChargeAliments(*lexique, p)
-		switch {
-		case os.IsNotExist(err):
-			fmt.Fprintf(os.Stderr, "%s absent : lecture sans lexique\n", *lexique)
-		case err != nil:
-			echoue(err)
-		default:
-			aliments = charge
-		}
+	aliments, err := choisitAliments(*lexique, p)
+	if err != nil {
+		echoue(err)
 	}
 
 	switch {
