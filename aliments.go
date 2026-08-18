@@ -68,6 +68,12 @@ func ChargeAliments(chemin string, p *Pack) (*Lexique, error) {
 	if err != nil {
 		return nil, err
 	}
+	return LisAliments(contenu, p)
+}
+
+// LisAliments fait le même travail depuis un lexique déjà en mémoire — celui
+// que le module embarque, notamment.
+func LisAliments(contenu []byte, p *Pack) (*Lexique, error) {
 	var fichier struct {
 		Items []entreeAliment `json:"items"`
 	}

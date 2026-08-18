@@ -1,0 +1,34 @@
+moteur — analyse des lignes d'ingrédients en français
+Copyright 2026 Paul COURTOIS
+
+Ce produit inclut des logiciels développés dans le cadre du projet Patachoo
+(https://github.com/Pol128/Patachoo), distribués sous licence Apache-2.0.
+Le texte intégral de la licence se trouve dans le fichier LICENSE.
+
+
+Composants tiers redistribués
+-----------------------------
+
+data/foods_fr.json — lexique d'aliments
+    Issu du projet MealieSync (https://github.com/Rouzax/MealieSync).
+    Licence MIT, Copyright (c) 2025 Rouzax.
+    Le texte de cette licence est conservé, attaché aux données, dans
+    data/foods_fr.LICENSE. Ce fichier étant embarqué dans le module (go:embed),
+    il part dans tout binaire qui importe ce module : la mention doit suivre.
+
+lang/fr.toml — pack de langue française
+    Écrit pour ce projet, dérivé de l'observation d'un corpus de recettes.
+    Couvert par la licence de ce dépôt.
+
+testdata/fr.txt — jeu de référence annoté à la main
+    Écrit pour ce projet. Couvert par la licence de ce dépôt.
+
+
+Ce qui n'est PAS dans ce dépôt, et pourquoi
+-------------------------------------------
+
+Aucune ligne de code n'est reprise de Mealie ni de Tandoor, tous deux sous
+licence AGPL-3.0. En recopier un extrait basculerait ce module — et tout ce qui
+l'importe — sous AGPL-3.0.
+
+Aucune page récoltée sur un site tiers n'est versionnée ici.

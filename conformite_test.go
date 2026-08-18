@@ -58,7 +58,7 @@ func TestAccordCompareParLePack(t *testing.T) {
 // parser que personne n'exécute — mesuré sans lexique, livré avec.
 func lecteur(t *testing.T, p *Pack) func(string) *Ingredient {
 	t.Helper()
-	chemin := filepath.Join("..", "data", "foods_fr.json")
+	chemin := filepath.Join("data", "foods_fr.json")
 	lexique, err := ChargeAliments(chemin, p)
 	if os.IsNotExist(err) {
 		t.Logf("%s absent : mesure sans lexique", chemin)
@@ -71,7 +71,7 @@ func lecteur(t *testing.T, p *Pack) func(string) *Ingredient {
 }
 
 func TestJeuDeReference(t *testing.T) {
-	chemin := filepath.Join("..", "testdata", "fr.txt")
+	chemin := filepath.Join("testdata", "fr.txt")
 	contenu, err := os.ReadFile(chemin)
 	if os.IsNotExist(err) {
 		t.Skipf("%s pas encore annoté", chemin)

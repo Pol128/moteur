@@ -27,7 +27,7 @@ import (
 	"os"
 	"strings"
 
-	"moteur"
+	"github.com/Pol128/moteur"
 )
 
 func main() {

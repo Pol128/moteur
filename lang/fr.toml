@@ -1,0 +1,881 @@
+# Pack de langue français — unités, prépositions, flexions, quantités.
+#
+# Le moteur ne connaît aucune langue : il applique ce fichier. Ajouter
+# l'espagnol ou l'italien, c'est écrire `lang/es.toml`, pas toucher au code.
+#
+# TOUT CE QUI EST ICI A ÉTÉ MESURÉ sur le corpus (320 049 lignes
+# d'ingrédients, six sites) — jamais supposé. Une forme d'écriture n'entre
+# dans `formes` que si le corpus la contient, ou si c'est la flexion évidente
+# d'une forme qui s'y trouve. `./crawl lexique` mesure ce que ce pack couvre
+# et affiche ce qui lui échappe, par fréquence décroissante ; c'est la
+# procédure pour le compléter. Voir LANG.md.
+#
+# Statut juridique : dérivé, publiable. C'est un lexique, pas une base de
+# données extraite (NOTE-PROJET.md §8).
+
+[pack]
+langue = "fr"
+nom = "français"
+version = 1
+corpus = "320 049 lignes · marmiton, cuisineaz, jow, ptitchef, meilleurduchef, 750g"
+
+
+# ---------------------------------------------------------------------------
+# Normalisation
+# ---------------------------------------------------------------------------
+# Appliquée aux `formes` de ce fichier comme au texte à lire, dans cet ordre.
+# Sans elle, « Càs », « càs » et « CaS » seraient trois unités distinctes —
+# les trois existent dans le corpus.
+
+[orthographe]
+minuscules = true
+sans_accents = true          # « pincee » retrouve « pincée » ; aucune collision mesurée
+apostrophes = ["'", "’", "ʼ", "´"]   # ’ est majoritaire chez ptitchef
+apostrophe_canonique = "'"
+# CuisineAZ écrit le pluriel entre parenthèses : « 4 pavé(s) », « 2 Orange(s) ».
+# 24 000 lignes en dépendent : la marque est retirée avant toute comparaison.
+marques_pluriel = ["(s)", "(x)", "(es)"]
+espaces_multiples = "réduire"
+
+
+# ---------------------------------------------------------------------------
+# Prépositions partitives
+# ---------------------------------------------------------------------------
+# LE marqueur de frontière du français, et la raison pour laquelle Mealie et
+# Tandoor échouent : « 500 g de beurre » — la préposition sépare l'unité de
+# l'aliment, un modèle positionnel la range dans le nom de l'aliment.
+# Mesuré sur marmiton : 48 618 « de », 8 910 « d' », 28 372 sans préposition.
+# À tester du plus long au plus court : « de la » avant « de ».
+
+[prepositions]
+partitifs = ["de la", "de l'", "du", "des", "de", "d'"]
+# Seul endroit où les accents comptent : sans ça, « 16 dés de foies gras »
+# ferait lire « dés » comme le partitif « des ». Ailleurs le repli des accents
+# rattrape les claviers pressés (« cuillere a soupe »).
+sensible_aux_accents = true
+# En tête de ligne, le partitif tient lieu de quantité : « du beurre »,
+# « des oeufs » (612 lignes en prose). Ce n'est pas une frontière d'unité.
+en_tete = ["du", "de la", "de l'", "des"]
+
+
+# ---------------------------------------------------------------------------
+# Quantités
+# ---------------------------------------------------------------------------
+
+[quantites]
+separateur_decimal = ","                    # « 0,5 » ; le point existe aussi
+separateurs_fraction = ["/"]                # 3 271 lignes en « 1/2 »
+separateurs_intervalle = ["à", "-", "ou"]   # « 2 à 3 gousses » : 552 lignes
+
+# Valeur exacte, écrite en toutes lettres.
+[quantites.litterales]
+"un" = 1
+"une" = 1
+"deux" = 2
+"trois" = 3
+"quatre" = 4
+"cinq" = 5
+"six" = 6
+"sept" = 7
+"huit" = 8
+"neuf" = 9
+"dix" = 10
+"douze" = 12
+"demi" = 0.5
+"demie" = 0.5
+"quart" = 0.25
+"moitié" = 0.5
+"tiers" = 0.3333
+
+# Fractions typographiques : 404 « ½ » rien qu'en prose.
+[quantites.fractions]
+"½" = 0.5
+"¼" = 0.25
+"¾" = 0.75
+"⅓" = 0.3333
+"⅔" = 0.6667
+"⅛" = 0.125
+
+# Valeur indicative : à retenir, mais à marquer comme approximative.
+[quantites.indicatives]
+"quelques" = 3
+
+# Aucune valeur : la ligne dit qu'il en faut, pas combien. À ne pas confondre
+# avec une quantité absente — « un peu de lait » n'est pas « lait ».
+[quantites.indefinies]
+expressions = [
+  "un peu",
+  "à volonté",
+  "au goût",
+  "selon le goût",
+  "selon les goûts",
+  "selon votre goût",
+  "selon goût",
+  "qs",          # quantité suffisante, notation de cuisine professionnelle
+  "q.s.",
+]
+
+
+# ---------------------------------------------------------------------------
+# Flexion
+# ---------------------------------------------------------------------------
+
+[flexion]
+# En français le pluriel commence à deux : « 1,5 cuillère à soupe » reste au
+# singulier, « 2 cuillères à soupe » prend la marque. L'anglais mettrait 1.
+# C'est typiquement la règle qu'un moteur ne doit pas connaître.
+seuil_pluriel = 2
+
+
+# ---------------------------------------------------------------------------
+# Qualificatifs d'unité
+# ---------------------------------------------------------------------------
+# Marmiton publie 162 « unités » distinctes, mais une quarantaine ne sont que
+# des unités de base habillées d'un adjectif : « grosse cuillère à soupe »,
+# « petite boîte », « cuillère à café bien bombée ». Les énumérer une à une
+# serait sans fin — la construction est productive. Le moteur les décolle et
+# les range dans la note ; la quantité, elle, ne change pas.
+
+[qualificatifs]
+# « demi » n'est pas un adjectif comme les autres : il divise la quantité.
+# Marmiton publie « demi litre », « demi cuillère à café », « demi pot ».
+# Seul, sans unité derrière, c'est l'unité `moitie` — d'où la règle du
+# moteur : une forme d'unité reconnue telle quelle gagne, on ne décolle
+# qu'ensuite.
+multiplicateurs = { "demi" = 0.5, "demie" = 0.5, "demis" = 0.5, "demies" = 0.5 }
+avant = [
+  "gros", "grosse", "grosses",
+  "petit", "petite", "petits", "petites",
+  "grand", "grande", "grands", "grandes",
+  "bon", "bonne", "bonnes",
+  "beau", "beaux", "belle", "belles",
+  "fin", "fine", "fins", "fines",
+]
+apres = [
+  "bombée", "bombées", "bien bombée",
+  "rase", "rases",
+  "épaisse", "épaisses",
+  "fine", "fines",
+  "moyen", "moyenne", "moyennes",
+  "entier", "entière", "entiers", "entières",
+]
+
+
+# ---------------------------------------------------------------------------
+# Notes et marqueurs
+# ---------------------------------------------------------------------------
+
+[notes]
+# Marmiton balise le complément à part : « (vieilles) », « (bio) ».
+delimiteurs = [["(", ")"], ["[", "]"]]
+separateurs = [";", ","]
+# 815 lignes « facultatif », 196 « optionnel », 132 « au choix ».
+optionnel = ["facultatif", "facultative", "optionnel", "optionnelle", "au choix"]
+# 566 lignes : la quantité qui précède est donnée à la louche.
+approximation = ["environ", "à peu près"]
+# 3 824 lignes contiennent « ou » : « sirop d'agave (ou sucre) ». L'alternative
+# appartient à la note, elle ne crée pas une seconde ligne d'ingrédient.
+alternatives = ["ou", "ou bien", "à défaut", "de préférence"]
+
+
+# ---------------------------------------------------------------------------
+# Unités
+# ---------------------------------------------------------------------------
+# `dimension` = masse (base en grammes) · volume (millilitres) · longueur
+# (centimètres) · compte (dénombrable, sans conversion) · imprécise.
+#
+# `base` n'est renseigné que si la conversion est exacte ou conventionnelle.
+# Un verre n'a pas de contenance : lui en inventer une serait le genre de
+# supposition que ce projet refuse.
+#
+# `formes` : toutes les écritures rencontrées. La flexion française est trop
+# irrégulière pour être calculée — « bocal/bocaux », « tour de moulin/tours de
+# moulin » —, et les sites publient les pluriels : autant les lire.
+#
+# Seuil retenu : une unité entre dans le pack à partir de 2 occurrences dans
+# le corpus. Écartées à ce titre : « Un peu » et « râpée », que Marmiton range
+# dans son champ unité alors que ce n'en sont pas.
+
+# --- masse ---------------------------------------------------------------
+
+[unites.gramme]
+dimension = "masse"
+base = 1
+singulier = "gramme"
+pluriel = "grammes"
+abrev = "g"
+formes = ["g", "g.", "gr", "gr.", "grs", "gramme", "grammes"]
+
+[unites.kilogramme]
+dimension = "masse"
+base = 1000
+singulier = "kilogramme"
+pluriel = "kilogrammes"
+abrev = "kg"
+formes = ["kg", "kilo", "kilos", "kilogramme", "kilogrammes"]
+
+[unites.milligramme]
+dimension = "masse"
+base = 0.001
+singulier = "milligramme"
+pluriel = "milligrammes"
+abrev = "mg"
+# Jow écrit « 235 mg Crème liquide » : son gabarit d'affichage bascule en mg
+# sous le gramme et se trompe de facteur. L'unité est juste, la valeur non.
+formes = ["mg", "milligramme", "milligrammes"]
+
+[unites.livre]
+dimension = "masse"
+base = 500
+singulier = "livre"
+pluriel = "livres"
+abrev = "livre"
+# 53 lignes, presque toutes québécoises (« 1 lb (ou 500 g) de boeuf haché »),
+# où lb vaut 453,6 g. La livre française vaut 500 g. L'écart est de 10 % et le
+# corpus ne permet pas de trancher ligne à ligne : on retient 500.
+formes = ["livre", "livres", "lb", "lbs"]
+
+[unites.once]
+dimension = "masse"
+base = 28.35
+singulier = "once"
+pluriel = "onces"
+abrev = "oz"
+formes = ["oz", "once", "onces"]
+
+# --- volume --------------------------------------------------------------
+
+[unites.litre]
+dimension = "volume"
+base = 1000
+singulier = "litre"
+pluriel = "litres"
+abrev = "l"
+formes = ["l", "L", "l.", "litre", "litres"]
+
+[unites.decilitre]
+dimension = "volume"
+base = 100
+singulier = "décilitre"
+pluriel = "décilitres"
+abrev = "dl"
+formes = ["dl", "décilitre", "décilitres"]
+
+[unites.centilitre]
+dimension = "volume"
+base = 10
+singulier = "centilitre"
+pluriel = "centilitres"
+abrev = "cl"
+formes = ["cl", "cl.", "cls", "centilitre", "centilitres"]
+
+[unites.millilitre]
+dimension = "volume"
+base = 1
+singulier = "millilitre"
+pluriel = "millilitres"
+abrev = "ml"
+formes = ["ml", "ml.", "mL", "millilitre", "millilitres"]
+
+[unites.cuillere_a_soupe]
+dimension = "volume"
+base = 15
+singulier = "cuillère à soupe"
+pluriel = "cuillères à soupe"
+abrev = "c. à s."
+# L'unité qui met Tandoor par terre : quatre mots là où son parser en attend
+# un. Douze écritures relevées, dont « CS », « CaS » et « c à s ».
+formes = [
+  "cuillère à soupe", "cuillères à soupe",
+  "cuillerée à soupe", "cuillerées à soupe",
+  "cuil. à soupe", "cuil à soupe",
+  "c. à soupe", "c à soupe", "c.à soupe",
+  "c. à s.", "c. à s", "c à s", "c.à.s.", "c.à.s", "c.s",
+  "cuil. à s.", "c.à.soupe", "cuillers à soupe",
+  "c. à table", "c à table", "cuillère à table", "cuillères à table",
+  "càs", "cas", "cs",
+]
+
+[unites.cuillere_a_cafe]
+dimension = "volume"
+base = 5
+singulier = "cuillère à café"
+pluriel = "cuillères à café"
+abrev = "c. à c."
+formes = [
+  "cuillère à café", "cuillères à café",
+  "cuillerée à café", "cuillerées à café",
+  "cuil. à café", "cuil à café",
+  "c. à café", "c à café", "c.à café",
+  "c. à c.", "c. à c", "c à c", "c.à.c.", "c.à.c", "c.c", "c.à.café",
+  "càc", "cac", "cc",
+]
+
+[unites.cuillere_a_the]
+dimension = "volume"
+base = 5
+singulier = "cuillère à thé"
+pluriel = "cuillères à thé"
+abrev = "c. à thé"
+# Québec. 213 lignes : ptitchef reprend des recettes d'outre-Atlantique.
+formes = ["cuillère à thé", "cuillères à thé", "c. à thé", "c à thé",
+          "c.thé", "c à t"]
+
+[unites.cuillere_a_dessert]
+dimension = "volume"
+base = 10
+singulier = "cuillère à dessert"
+pluriel = "cuillères à dessert"
+abrev = "c. à dessert"
+formes = ["cuillère à dessert", "cuillères à dessert", "c. à dessert"]
+
+[unites.cuillere]
+dimension = "imprecise"
+singulier = "cuillère"
+pluriel = "cuillères"
+abrev = "cuillère"
+# Sans « à soupe » ni « à café », 183 lignes chez Marmiton. On ne devine pas
+# laquelle : c'est une unité imprécise, pas une cuillère à soupe par défaut.
+formes = ["cuillère", "cuillères", "cuil", "cuil."]
+
+[unites.tasse]
+dimension = "volume"
+base = 250
+singulier = "tasse"
+pluriel = "tasses"
+abrev = "tasse"
+# Marmiton écrit lui-même « tasse (250ml) » : la contenance vient du corpus.
+formes = ["tasse", "tasses", "tasse à café", "tasses à café", "tasse à thé", "tasses à thé"]
+
+[unites.louche]
+dimension = "imprecise"
+singulier = "louche"
+pluriel = "louches"
+abrev = "louche"
+formes = ["louche", "louches"]
+
+# --- longueur ------------------------------------------------------------
+
+[unites.centimetre]
+dimension = "longueur"
+base = 1
+singulier = "centimètre"
+pluriel = "centimètres"
+abrev = "cm"
+formes = ["cm", "centimètre", "centimètres"]
+
+[unites.millimetre]
+dimension = "longueur"
+base = 0.1
+singulier = "millimètre"
+pluriel = "millimètres"
+abrev = "mm"
+formes = ["mm", "millimètre", "millimètres"]
+
+# --- imprécises ----------------------------------------------------------
+# Ce sont de vraies unités du français culinaire : « une pincée de sel » est
+# une quantité, même sans conversion possible.
+
+[unites.pincee]
+dimension = "imprecise"
+singulier = "pincée"
+pluriel = "pincées"
+abrev = "pincée"
+formes = ["pincée", "pincées", "pinc."]
+
+[unites.poignee]
+dimension = "imprecise"
+singulier = "poignée"
+pluriel = "poignées"
+abrev = "poignée"
+formes = ["poignée", "poignées"]
+
+[unites.noix]
+dimension = "imprecise"
+singulier = "noix"
+pluriel = "noix"
+abrev = "noix"
+# « une noix de beurre ». Ambigu avec l'aliment : c'est au partitif de
+# trancher — « 100 g de noix » n'a pas la même forme.
+formes = ["noix"]
+
+[unites.noisette]
+dimension = "imprecise"
+singulier = "noisette"
+pluriel = "noisettes"
+abrev = "noisette"
+formes = ["noisette", "noisettes"]
+
+[unites.goutte]
+dimension = "imprecise"
+singulier = "goutte"
+pluriel = "gouttes"
+abrev = "goutte"
+formes = ["goutte", "gouttes"]
+
+[unites.trait]
+dimension = "imprecise"
+singulier = "trait"
+pluriel = "traits"
+abrev = "trait"
+formes = ["trait", "traits"]
+
+[unites.filet]
+dimension = "imprecise"
+singulier = "filet"
+pluriel = "filets"
+abrev = "filet"
+# « un filet d'huile ». Homonyme d'une découpe (« filet de poulet ») : là
+# encore, le partitif est ce qui les distingue.
+formes = ["filet", "filets"]
+
+[unites.zeste]
+dimension = "imprecise"
+singulier = "zeste"
+pluriel = "zestes"
+abrev = "zeste"
+formes = ["zeste", "zestes"]
+
+[unites.pointe]
+dimension = "imprecise"
+singulier = "pointe"
+pluriel = "pointes"
+abrev = "pointe"
+formes = ["pointe", "pointes", "pointe de couteau", "pointes de couteau"]
+
+[unites.mesure]
+dimension = "imprecise"
+singulier = "mesure"
+pluriel = "mesures"
+abrev = "mesure"
+# « 1 mesure de maïzena » : le doseur fourni avec le produit. Rien à convertir.
+formes = ["mesure", "mesures"]
+
+[unites.tour_de_moulin]
+dimension = "imprecise"
+singulier = "tour de moulin"
+pluriel = "tours de moulin"
+abrev = "tour de moulin"
+# « 3 tours de moulin à poivre » : le partitif coupe avant « moulin », la
+# tête se réduit à « tours ». Les deux écritures sont donc listées.
+formes = ["tour de moulin", "tours de moulin", "tour", "tours"]
+
+[unites.soupcon]
+dimension = "imprecise"
+singulier = "soupçon"
+pluriel = "soupçons"
+abrev = "soupçon"
+formes = ["soupçon", "soupçons"]
+
+# --- comptables ----------------------------------------------------------
+# Dénombrables : ni masse ni volume, mais une unité tout de même. Jow abrège
+# les siennes dans son propre référentiel (« gou. », « tran. », « bou. ») ;
+# ces abréviations arrivent telles quelles dans le texte des recettes.
+
+[unites.piece]
+dimension = "compte"
+singulier = "pièce"
+pluriel = "pièces"
+abrev = "pièce"
+formes = ["pièce", "pièces"]
+
+[unites.gousse]
+dimension = "compte"
+singulier = "gousse"
+pluriel = "gousses"
+abrev = "gousse"
+formes = ["gousse", "gousses", "gou."]
+
+[unites.sachet]
+dimension = "compte"
+singulier = "sachet"
+pluriel = "sachets"
+abrev = "sachet"
+formes = ["sachet", "sachets", "sac."]
+
+[unites.tranche]
+dimension = "compte"
+singulier = "tranche"
+pluriel = "tranches"
+abrev = "tranche"
+formes = ["tranche", "tranches", "tran."]
+
+[unites.feuille]
+dimension = "compte"
+singulier = "feuille"
+pluriel = "feuilles"
+abrev = "feuille"
+formes = ["feuille", "feuilles"]
+
+[unites.branche]
+dimension = "compte"
+singulier = "branche"
+pluriel = "branches"
+abrev = "branche"
+formes = ["branche", "branches", "branchette", "branchettes"]
+
+[unites.brin]
+dimension = "compte"
+singulier = "brin"
+pluriel = "brins"
+abrev = "brin"
+formes = ["brin", "brins"]
+
+[unites.botte]
+dimension = "compte"
+singulier = "botte"
+pluriel = "bottes"
+abrev = "botte"
+formes = ["botte", "bottes"]
+
+[unites.bouquet]
+dimension = "compte"
+singulier = "bouquet"
+pluriel = "bouquets"
+abrev = "bouquet"
+formes = ["bouquet", "bouquets", "bou."]
+
+[unites.boite]
+dimension = "compte"
+singulier = "boîte"
+pluriel = "boîtes"
+abrev = "boîte"
+# « boite » sans accent circonflexe : 273 lignes, orthographe de 1990 ou
+# clavier pressé. Les deux se lisent.
+formes = ["boîte", "boîtes", "boite", "boites", "boîte de conserve", "boîtes de conserve"]
+
+[unites.pot]
+dimension = "compte"
+singulier = "pot"
+pluriel = "pots"
+abrev = "pot"
+formes = ["pot", "pots"]
+
+[unites.paquet]
+dimension = "compte"
+singulier = "paquet"
+pluriel = "paquets"
+abrev = "paquet"
+formes = ["paquet", "paquets"]
+
+[unites.cube]
+dimension = "compte"
+singulier = "cube"
+pluriel = "cubes"
+abrev = "cube"
+formes = ["cube", "cubes"]
+
+[unites.bouteille]
+dimension = "compte"
+singulier = "bouteille"
+pluriel = "bouteilles"
+abrev = "bouteille"
+formes = ["bouteille", "bouteilles"]
+
+[unites.brique]
+dimension = "compte"
+singulier = "brique"
+pluriel = "briques"
+abrev = "brique"
+formes = ["brique", "briques", "briquette", "briquettes"]
+
+[unites.barquette]
+dimension = "compte"
+singulier = "barquette"
+pluriel = "barquettes"
+abrev = "barquette"
+formes = ["barquette", "barquettes"]
+
+[unites.tablette]
+dimension = "compte"
+singulier = "tablette"
+pluriel = "tablettes"
+abrev = "tablette"
+formes = ["tablette", "tablettes"]
+
+[unites.boule]
+dimension = "compte"
+singulier = "boule"
+pluriel = "boules"
+abrev = "boule"
+formes = ["boule", "boules", "bille", "billes"]
+
+[unites.morceau]
+dimension = "compte"
+singulier = "morceau"
+pluriel = "morceaux"
+abrev = "morceau"
+formes = ["morceau", "morceaux"]
+
+[unites.carre]
+dimension = "compte"
+singulier = "carré"
+pluriel = "carrés"
+abrev = "carré"
+formes = ["carré", "carrés"]
+
+[unites.rouleau]
+dimension = "compte"
+singulier = "rouleau"
+pluriel = "rouleaux"
+abrev = "rouleau"
+formes = ["rouleau", "rouleaux"]
+
+[unites.bocal]
+dimension = "compte"
+singulier = "bocal"
+pluriel = "bocaux"
+abrev = "bocal"
+formes = ["bocal", "bocaux"]
+
+[unites.bloc]
+dimension = "compte"
+singulier = "bloc"
+pluriel = "blocs"
+abrev = "bloc"
+formes = ["bloc", "blocs"]
+
+[unites.baton]
+dimension = "compte"
+singulier = "bâton"
+pluriel = "bâtons"
+abrev = "bâton"
+formes = ["bâton", "bâtons", "bâtonnet", "bâtonnets"]
+
+[unites.tete]
+dimension = "compte"
+singulier = "tête"
+pluriel = "têtes"
+abrev = "tête"
+formes = ["tête", "têtes"]
+
+[unites.rondelle]
+dimension = "compte"
+singulier = "rondelle"
+pluriel = "rondelles"
+abrev = "rondelle"
+formes = ["rondelle", "rondelles"]
+
+[unites.lamelle]
+dimension = "compte"
+singulier = "lamelle"
+pluriel = "lamelles"
+abrev = "lamelle"
+formes = ["lamelle", "lamelles"]
+
+[unites.quartier]
+dimension = "compte"
+singulier = "quartier"
+pluriel = "quartiers"
+abrev = "quartier"
+formes = ["quartier", "quartiers"]
+
+[unites.portion]
+dimension = "compte"
+singulier = "portion"
+pluriel = "portions"
+abrev = "portion"
+formes = ["portion", "portions"]
+
+[unites.grain]
+dimension = "compte"
+singulier = "grain"
+pluriel = "grains"
+abrev = "grain"
+formes = ["grain", "grains"]
+
+[unites.plaque]
+dimension = "compte"
+singulier = "plaque"
+pluriel = "plaques"
+abrev = "plaque"
+formes = ["plaque", "plaques", "pastille", "pastilles"]
+
+[unites.dose]
+dimension = "compte"
+singulier = "dose"
+pluriel = "doses"
+abrev = "dose"
+formes = ["dose", "doses", "dosette", "dosettes"]
+
+[unites.flacon]
+dimension = "compte"
+singulier = "flacon"
+pluriel = "flacons"
+abrev = "flacon"
+formes = ["flacon", "flacons"]
+
+[unites.bulbe]
+dimension = "compte"
+singulier = "bulbe"
+pluriel = "bulbes"
+abrev = "bulbe"
+formes = ["bulbe", "bulbes"]
+
+[unites.epi]
+dimension = "compte"
+singulier = "épi"
+pluriel = "épis"
+abrev = "épi"
+formes = ["épi", "épis"]
+
+[unites.petale]
+dimension = "compte"
+singulier = "pétale"
+pluriel = "pétales"
+abrev = "pétale"
+formes = ["pétale", "pétales"]
+
+[unites.queue]
+dimension = "compte"
+singulier = "queue"
+pluriel = "queues"
+abrev = "queue"
+formes = ["queue", "queues"]
+
+[unites.cosse]
+dimension = "compte"
+singulier = "cosse"
+pluriel = "cosses"
+abrev = "cosse"
+formes = ["cosse", "cosses"]
+
+[unites.buche]
+dimension = "compte"
+singulier = "bûche"
+pluriel = "bûches"
+abrev = "bûche"
+formes = ["bûche", "bûches", "bûchette", "bûchettes"]
+
+[unites.galet]
+dimension = "compte"
+singulier = "galet"
+pluriel = "galets"
+abrev = "galet"
+formes = ["galet", "galets"]
+
+[unites.verre]
+dimension = "compte"
+singulier = "verre"
+pluriel = "verres"
+abrev = "verre"
+# Aucune contenance : le verre à moutarde fait 20 cl, le verre à eau 25, et le
+# corpus ne dit pas lequel. On ne convertit pas ce qu'on ne sait pas.
+formes = ["verre", "verres", "verre à eau", "verres à eau",
+          "verre à moutarde", "verres à moutarde"]
+
+[unites.bol]
+dimension = "compte"
+singulier = "bol"
+pluriel = "bols"
+abrev = "bol"
+formes = ["bol", "bols"]
+
+[unites.saladier]
+dimension = "compte"
+singulier = "saladier"
+pluriel = "saladiers"
+abrev = "saladier"
+formes = ["saladier", "saladiers"]
+
+[unites.sac]
+dimension = "compte"
+singulier = "sac"
+pluriel = "sacs"
+abrev = "sac"
+formes = ["sac", "sacs", "étui", "étuis"]
+
+[unites.douzaine]
+dimension = "compte"
+singulier = "douzaine"
+pluriel = "douzaines"
+abrev = "douzaine"
+facteur = 12                 # « une douzaine d'oeufs » = 12 pièces
+formes = ["douzaine", "douzaines"]
+
+[unites.dizaine]
+dimension = "compte"
+singulier = "dizaine"
+pluriel = "dizaines"
+abrev = "dizaine"
+facteur = 10
+# 110 lignes, « une dizaine de tomates cerises ». Le facteur est une
+# approximation assumée : personne ne compte.
+formes = ["dizaine", "dizaines"]
+
+[unites.vingtaine]
+dimension = "compte"
+singulier = "vingtaine"
+pluriel = "vingtaines"
+abrev = "vingtaine"
+facteur = 20
+formes = ["vingtaine", "vingtaines"]
+
+[unites.moitie]
+dimension = "compte"
+singulier = "moitié"
+pluriel = "moitiés"
+abrev = "moitié"
+facteur = 0.5
+# « 1 demi d'oignon » : 99 lignes chez Marmiton, où « demi » est publié comme
+# unité à part entière. Devant une autre unité (« demi litre »), c'est le
+# multiplicateur de la section [qualificatifs] qui s'applique.
+formes = ["moitié", "moitiés", "demi", "demis", "demie", "demies"]
+
+[unites.pave]
+dimension = "compte"
+singulier = "pavé"
+pluriel = "pavés"
+abrev = "pavé"
+formes = ["pavé", "pavés"]
+
+[unites.tige]
+dimension = "compte"
+singulier = "tige"
+pluriel = "tiges"
+abrev = "tige"
+formes = ["tige", "tiges"]
+
+[unites.pousse]
+dimension = "compte"
+singulier = "pousse"
+pluriel = "pousses"
+abrev = "pousse"
+formes = ["pousse", "pousses"]
+
+[unites.grappe]
+dimension = "compte"
+singulier = "grappe"
+pluriel = "grappes"
+abrev = "grappe"
+formes = ["grappe", "grappes"]
+
+[unites.bouchon]
+dimension = "compte"
+singulier = "bouchon"
+pluriel = "bouchons"
+abrev = "bouchon"
+formes = ["bouchon", "bouchons"]
+
+[unites.coeur]
+dimension = "compte"
+singulier = "coeur"
+pluriel = "coeurs"
+abrev = "coeur"
+formes = ["coeur", "coeurs"]
+
+[unites.bombe]
+dimension = "compte"
+singulier = "bombe"
+pluriel = "bombes"
+abrev = "bombe"
+formes = ["bombe", "bombes"]
+
+[unites.volume]
+dimension = "imprecise"
+singulier = "volume"
+pluriel = "volumes"
+abrev = "volume"
+# Unité relative : « 2 volumes d'eau pour 1 volume de riz ». Rien à convertir,
+# c'est un rapport.
+formes = ["volume", "volumes"]

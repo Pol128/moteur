@@ -1,4 +1,4 @@
-module moteur
+module github.com/Pol128/moteur
 
 go 1.26.6
 

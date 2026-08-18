@@ -321,13 +321,20 @@ func Charge(chemin string) (*Pack, error) {
 	if err != nil {
 		return nil, err
 	}
+	return Lis(contenu, chemin)
+}
+
+// Lis bâtit un pack depuis un TOML déjà en mémoire. origine ne sert qu'aux
+// messages d'erreur : c'est ce qui permet de charger aussi bien un fichier que
+// le pack embarqué dans le module.
+func Lis(contenu []byte, origine string) (*Pack, error) {
 	var brut map[string]any
 	if err := toml.Unmarshal(contenu, &brut); err != nil {
-		return nil, fmt.Errorf("%s : %w", chemin, err)
+		return nil, fmt.Errorf("%s : %w", origine, err)
 	}
 	pack, err := Construit(brut)
 	if err != nil {
-		return nil, fmt.Errorf("%s : %w", chemin, err)
+		return nil, fmt.Errorf("%s : %w", origine, err)
 	}
 	return pack, nil
 }

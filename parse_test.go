@@ -27,7 +27,7 @@ var (
 func packFR(t *testing.T) *Pack {
 	t.Helper()
 	packUneFois.Do(func() {
-		packPartage, packErreur = Charge(filepath.Join("..", "lang", "fr.toml"))
+		packPartage, packErreur = Charge(filepath.Join("lang", "fr.toml"))
 	})
 	if packErreur != nil {
 		t.Fatalf("chargement du pack : %v", packErreur)

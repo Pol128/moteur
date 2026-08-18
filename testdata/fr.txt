@@ -1,0 +1,303 @@
+# Segmentation de référence du français — annotée à la main.
+#
+# Un onglet entre les champs, un champ vide vaut « absent ». Les lignes
+# viennent du corpus telles quelles, fautes comprises : un parser qui ne
+# tient que sur des lignes propres ne sert à rien.
+#
+# Produit par `./crawl testdata`, relu dans l'interface d'annotation
+# (`./crawl serve` puis /annote.html). Ne pas éditer à la main sans reporter
+# la correction en base, elle serait écrasée au prochain export.
+#
+# plancher: 0.850
+#   Part des lignes que `crawler/parse.py` lit exactement comme ici, au
+#   moment de l'export. Le test `tests/test_testdata.py` refuse de descendre
+#   en dessous : c'est le garde-fou contre les régressions.
+#
+# source	brut	quantité	unité	partitif	aliment	note
+750g	Thym				Thym	
+750g	Sel ou sel fin				Sel	ou sel fin
+750g	Une dizaine de pignons de pin		Une dizaine	de	pignons de pin	
+750g	40 g de beurre	40	g	de	beurre	
+750g	6 tiges d'oignons nouveaux ou Cébettes	6	tiges	d'	oignons nouveaux	ou Cébettes
+750g	1 citron jaune	1			citron jaune	
+750g	Un morceau de pecorino romano	Un	morceau	de	pecorino romano	
+750g	½ botte de menthe	½	botte	de	menthe	
+750g	1 pâte brisée Tarte en or	1			pâte brisée	Tarte en or
+750g	Vinaigrette				Vinaigrette	
+750g	100 g de chapelure	100	g	de	chapelure	
+750g	1 c. à s. d'herbes de Provence	1	c. à s.	d'	herbes de Provence	
+750g	Sel ou sel fin				Sel	ou sel fin
+750g	1 boite de maïs	1	boite	de	maïs	
+750g	1 citron	1			citron	
+750g	4 tomates séchées	4			tomates séchées	
+750g	2 oeufs durs	2			oeufs durs	
+750g	1 gousse d'ail	1	gousse	d'	ail	
+750g	1 tomate	1			tomate	
+750g	4 brochettes	4			brochettes	
+750g	1 orange	1			orange	
+750g	1 courgette	1			courgette	
+750g	3 tomates	3			tomates	
+750g	1 boule de mozzarella	1	boule	de	mozzarella	
+750g	1 pincée de sel ou sel fin	1	pincée	de	sel	ou sel fin
+cuisineaz	200 ml Crème végétale	200	ml		Crème végétale	
+cuisineaz	5 c. à soupe Crème de marron	5	c. à soupe		Crème de marron	
+cuisineaz	1 cube(s) Bouillon cube(s)	1	cube(s)		Bouillon cube(s)	
+cuisineaz	1 c. à café Moutarde	1	c. à café		Moutarde	
+cuisineaz	1 Reblochon	1			Reblochon	
+cuisineaz	1 l Lait	1	l		Lait	
+cuisineaz	1 bouquet(s) Menthe fraîche	1	bouquet(s)		Menthe fraîche	
+cuisineaz	200 g Farine de blé	200	g		Farine de blé	
+cuisineaz	4 branche(s) Branche fraîche de romarin légèrement brûlée	4	branche(s)		Branche fraîche de romarin	légèrement brûlée
+cuisineaz	150 grammes Beurre	150	grammes		Beurre	
+cuisineaz	500 g Petits pois frais	500	g		Petits pois frais	
+cuisineaz	0.5 Melon blanc	0.5			Melon blanc	
+cuisineaz	120 g Rapadura (sucre de canne)	120	g		Rapadura	sucre de canne
+cuisineaz	Safran				Safran	
+cuisineaz	2 Œuf(s)	2			Œuf(s)	
+cuisineaz	50 g Sucre glace	50	g		Sucre glace	
+cuisineaz	10 g Beurre	10	g		Beurre	
+cuisineaz	250 g Farine	250	g		Farine	
+cuisineaz	500 g Farine T55	500	g		Farine	T55
+cuisineaz	0.5 branche(s) Coriandre fraîche	0.5	branche(s)		Coriandre fraîche	
+cuisineaz	0.5 botte(s) Persil plat	0.5	botte(s)		Persil plat	
+cuisineaz	15 cl Vin blanc sec	15	cl		Vin blanc sec	
+cuisineaz	1 Œuf(s)	1			Œuf(s)	
+cuisineaz	1 l Crème	1	l		Crème	
+cuisineaz	50 g Feta	50	g		Feta	
+cuisineaz	200 g Fromage de chèvre	200	g		Fromage de chèvre	
+cuisineaz	1 l Eau	1	l		Eau	
+cuisineaz	1 kg Aile(s) de poulet	1	kg		Aile(s) de poulet	
+cuisineaz	1 Gousse(s) de vanille	1	Gousse(s)	de	vanille	
+cuisineaz	0 Noix de muscade	0	Noix	de	muscade	
+cuisineaz	1 Extrait de vanille	1			Extrait de vanille	
+cuisineaz	3 Pomme(s) de terre	3			Pomme(s) de terre	
+cuisineaz	6 Blanc(s) de poulet	6			Blanc(s) de poulet	
+cuisineaz	4 Blanc(s) de poulet	4			Blanc(s) de poulet	
+cuisineaz	6 Pomme(s) de terre	6			Pomme(s) de terre	
+cuisineaz	1 Feuille(s) de laurier	1	Feuille(s)	de	laurier	
+cuisineaz	8 Vinaigre de cornichons	8			Vinaigre de cornichons	
+cuisineaz	2 gr Raisins secs	2	gr		Raisins secs	
+cuisineaz	150 gr Beurre	150	gr		Beurre	
+jow	150 g Pâte à tartiner	150	g		Pâte à tartiner	
+jow	1/2 càc Moutarde à l'ancienne	1/2	càc		Moutarde à l'ancienne	
+jow	2 càc Sauce pesto	2	càc		Sauce pesto	
+jow	1 càs Sirop d'érable	1	càs		Sirop d'érable	
+jow	1/2 gou. Ail	1/2	gou.		Ail	
+jow	60 g Mélange céréales	60	g		Mélange céréales	
+jow	1/5 gou. Ail	1/5	gou.		Ail	
+jow	1 pinc. Curry (poudre)	1	pinc.		Curry	poudre
+jow	1 càs Parmesan (râpé)	1	càs		Parmesan (râpé)	
+jow	70 g Riz	70	g		Riz	
+jow	1 Œuf	1			Œuf	
+jow	60 g Parmesan (râpé)	60	g		Parmesan (râpé)	
+jow	1 Yaourt nature	1			Yaourt nature	
+jow	1/10 bou. Menthe (feuilles)	1/10	bou.		Menthe	feuilles
+jow	1 càc Mayonnaise	1	càc		Mayonnaise	
+jow	1/2 gou. Ail	1/2	gou.		Ail	
+jow	1/2 càc Curcuma (poudre)	1/2	càc		Curcuma	poudre
+jow	1 càs Crème liquide	1	càs		Crème liquide	
+jow	1 càc Moutarde	1	càc		Moutarde	
+jow	1/4 gou. Ail	1/4	gou.		Ail	
+jow	1 càs Crème fraîche	1	càs		Crème fraîche	
+jow	1 càc Quatre-épices	1	càc		Quatre-épices	
+jow	1/2 càc Sauce piment (Sriracha)	1/2	càc		Sauce piment	Sriracha
+jow	2 tran. Pain de campagne (tranché)	2	tran.		Pain de campagne	tranché
+jow	1 tran. Jambon blanc	1	tran.		Jambon blanc	
+marmiton	80 cl d'eau	80	cl	d'	eau	
+marmiton	10 cl de vin blanc	10	cl	de	vin blanc	
+marmiton	400 g de farine	400	g	de	farine	
+marmiton	10 cl d'eau	10	cl	d'	eau	
+marmiton	50 g d'huile de coco	50	g	d'	huile de coco	
+marmiton	0.8 g de fleur de sel	0.8	g	de	fleur de sel	
+marmiton	1 cl de sirop de canne	1	cl	de	sirop de canne	
+marmiton	100 g de fromage frais de chèvre	100	g	de	fromage frais de chèvre	
+marmiton	20 cl de crème épaisse	20	cl	de	crème épaisse	
+marmiton	250 g d'écrevisses précuites	250	g	d'	écrevisses précuites	
+marmiton	fleur de sel				fleur de sel	
+marmiton	3 pièces d'oeufs	3	pièces	d'	oeufs	
+marmiton	4 pincées de Sel de Guérande Netto	4	pincées	de	Sel de Guérande	Netto
+marmiton	0.5 cuillère à café de vinaigre balsamique	0.5	cuillère à café	de	vinaigre balsamique	
+marmiton	300 g de saumon cru	300	g	de	saumon cru	
+marmiton	4 feuilles de nori	4	feuilles	de	nori	
+marmiton	1 gousse de caroube	1	gousse	de	caroube	
+marmiton	270 g de Nutella®	270	g	de	Nutella®	
+marmiton	4 oeufs	4			oeufs	
+marmiton	4 cl de rhum ambré	4	cl	de	rhum ambré	
+marmiton	1 jaune d'oeuf	1			jaune d'oeuf	
+marmiton	5 cl de lait	5	cl	de	lait	
+marmiton	200 g de chocolat au lait	200	g	de	chocolat au lait	
+marmiton	800 g d'escalopes de poulet	800	g	d'	escalopes de poulet	
+marmiton	200 g de feta	200	g	de	feta	
+marmiton	50 cl de lait	50	cl	de	lait	
+marmiton	poivre				poivre	
+marmiton	lait				lait	
+marmiton	1 yaourt nature	1			yaourt nature	
+marmiton	200 g de farine	200	g	de	farine	
+marmiton	20 g de farine	20	g	de	farine	
+marmiton	4 brins de thym frais	4	brins	de	thym frais	
+marmiton	1 paquet de bonbon	1	paquet	de	bonbon	
+marmiton	huile d'olive				huile d'olive	
+marmiton	420 g de sucre	420	g	de	sucre	
+marmiton	10 g de sucre	10	g	de	sucre	
+marmiton	1 kg de pomme de terre	1	kg	de	pomme de terre	
+marmiton	thym				thym	
+marmiton	sel				sel	
+marmiton	sel				sel	
+marmiton	de basilic frais			de	basilic frais	
+marmiton	sel et poivre				sel et poivre	
+marmiton	jus de citron				jus de citron	
+marmiton	herbes de Provence				herbes de Provence	
+marmiton	de ciboulette			de	ciboulette	
+marmiton	sel				sel	
+marmiton	basilic frais				basilic frais	
+marmiton	sel				sel	
+marmiton	poivre				poivre	
+marmiton	sel				sel	
+meilleurduchef	1 g de fleur de sel de Guérande	1	g	de	fleur de sel de Guérande	
+meilleurduchef	1,5 litres de fond de volaille en pâte Ariake	1,5	litres	de	fond de volaille	en pâte Ariake
+meilleurduchef	60 g de grué de cacao	60	g	de	grué de cacao	
+meilleurduchef	8 pétales de roses rouges fraîches	8	pétales	de	roses rouges fraîches	
+meilleurduchef	55 g de sucre glace	55	g	de	sucre glace	
+meilleurduchef	1 morceau de comté	1	morceau	de	comté	
+meilleurduchef	60 g de beurre	60	g	de	beurre	
+meilleurduchef	50 g de sucre en poudre	50	g	de	sucre en poudre	
+meilleurduchef	vanille en poudre				vanille en poudre	
+meilleurduchef	120 g de crème entière liquide à 35% de matière grasse	120	g	de	crème entière liquide	à 35% de matière grasse
+meilleurduchef	80 g de sucre glace	80	g	de	sucre glace	
+meilleurduchef	20 g de sucre en poudre	20	g	de	sucre en poudre	
+meilleurduchef	140 g de farine type 55	140	g	de	farine	type 55
+meilleurduchef	20 g de corn flakes	20	g	de	corn flakes	
+meilleurduchef	85 g d'amandes entières décortiquées brutes	85	g	d'	amandes entières décortiquées brutes	
+meilleurduchef	1 œuf	1			œuf	
+meilleurduchef	1/4 de litre de crème entière liquide	1/4	litre	de de	crème entière liquide	
+meilleurduchef	40 g de beurre	40	g	de	beurre	
+meilleurduchef	140 g de farine type 55	140	g	de	farine	type 55
+meilleurduchef	200 g de sucre en poudre	200	g	de	sucre en poudre	
+meilleurduchef	framboises fraîches				framboises fraîches	
+meilleurduchef	140 g de farine type 55	140	g	de	farine	type 55
+meilleurduchef	2 verres de rhum brun	2	verres	de	rhum brun	
+meilleurduchef	1 petit pot de crème fraîche	1	petit pot	de	crème fraîche	
+meilleurduchef	une petite pincée de sel fin	une	petite pincée	de	sel fin	
+meilleurduchef	200 g de carottes	200	g	de	carottes	
+meilleurduchef	1 cuillère à café de cannelle en poudre	1	cuillère à café	de	cannelle en poudre	
+meilleurduchef	quelques groseilles fraîches	quelques			groseilles fraîches	
+meilleurduchef	arôme vanille				arôme vanille	
+meilleurduchef	feuille d'or		feuille	d'	or	
+meilleurduchef	1 gousse de vanille	1	gousse	de	vanille	
+meilleurduchef	1 foie gras frais de canard à température ambiante	1			foie gras frais de canard	à température ambiante
+meilleurduchef	500 g de fondant blanc pâtissier	500	g	de	fondant blanc pâtissier	
+meilleurduchef	fond de veau lié				fond de veau lié	
+meilleurduchef	poivre				poivre	
+meilleurduchef	colorant en poudre hydrosoluble noir				colorant en poudre hydrosoluble noir	
+meilleurduchef	80 g de beurre salé	80	g	de	beurre salé	
+meilleurduchef	12 petits oignons au vinaigre	12			petits oignons au vinaigre	
+meilleurduchef	95 g de sucre en poudre (80 g + 15 g)	95	g	de	sucre en poudre	80 g + 15 g
+meilleurduchef	136 g de sucre inverti (trimoline) ("en pâte") (80 g + 56 g)	136	g	de	sucre inverti	trimoline) ("en pâte") (80 g + 56 g
+meilleurduchef	un peu d'eau	un	peu	d'	eau	
+meilleurduchef	135 g de jus de citron frais (4 à 5 pièces) ou purée de citron Ravifruit	135	g	de	jus de citron frais	(4 à 5 pièces) ou purée de citron Ravifruit
+meilleurduchef	50 g de glucose cristal (sirop de glucose)	50	g	de	glucose cristal	sirop de glucose
+meilleurduchef	1 boîte de marrons entiers (400 g) ou 1 bocal de marrons entiers	1	boîte	de	marrons entiers	(400 g) ou 1 bocal de marrons entiers
+meilleurduchef	quelques grains de café, chocolat noir	quelques	grains	de	café, chocolat noir	
+meilleurduchef	600 g de sucre cristal (550 + 50)	600	g	de	sucre cristal	550 + 50
+meilleurduchef	30 g de jaunes d'œufs (1 à 2)	30	g	de	jaunes d'œufs	1 à 2
+meilleurduchef	3 jaunes d'œufs (ou 1 oeuf entier)	3			jaunes d'œufs	ou 1 oeuf entier
+meilleurduchef	300 g de pâte à pain (achetée chez le boulanger ou faite maison)	300	g	de	pâte à pain	achetée chez le boulanger ou faite maison
+meilleurduchef	5 g de beurre Mycryo (soit 1% du poids de chocolat)	5	g	de	beurre Mycryo	soit 1% du poids de chocolat
+meilleurduchef	1 truffe extra (finition)	1			truffe extra	finition
+meilleurduchef	80 à 120 g d'anisette (Cristal anis)	80 à 120	g	d'	anisette	Cristal anis
+meilleurduchef	quelques gouttes d'arôme vanille	quelques	gouttes	d'	arôme vanille	
+meilleurduchef	un peu d'eau	un peu		d'	eau	
+meilleurduchef	un peu d'eau	un peu		d'	eau	
+meilleurduchef	un peu de cannelle en poudre	un peu		de	cannelle en poudre	
+meilleurduchef	quelques fraises du jardin (facultatif)	quelques			fraises	du jardin (facultatif)
+meilleurduchef	quelques cerises fraîches	quelques			cerises	fraîches
+meilleurduchef	un peu d'huile d'olive	un peu		d'	huile d'olive	
+ptitchef	1 sachet de levure chimique	1	sachet	de	levure chimique	
+ptitchef	Fromage râpé				Fromage râpé	
+ptitchef	150 gr de jambon ( environ 4 tranches )	150	gr	de	jambon	environ 4 tranches
+ptitchef	2 gousses d’ail	2	gousses	d’	ail	
+ptitchef	2 oeufs	2			oeufs	
+ptitchef	6 pommes de terre	6			pommes de terre	
+ptitchef	1cas d'arôme de vanille	1	cas	d'	arôme de vanille	
+ptitchef	huile d'olive				huile d'olive	
+ptitchef	500 g de farine de blé	500	g	de	farine de blé	
+ptitchef	1 oeuf	1			oeuf	
+ptitchef	125g de lait	125	g	de	lait	
+ptitchef	2 kg de moules	2	kg	de	moules	
+ptitchef	2 petits avocats coupés en cubes	2			avocats	petits coupés en cubes
+ptitchef	15 gr de feuilles de basilic	15	gr	de	feuilles de basilic	
+ptitchef	Huile d'olive				Huile d'olive	
+ptitchef	100gr de farine de riz (2 pots)	100	gr	de	farine de riz	2 pots
+ptitchef	1 c. à café de zeste d'orange râpé	1	c. à café	de	zeste d'orange râpé	
+ptitchef	Poivre				Poivre	
+ptitchef	1 piment séché (ou ¼ de piment rouge frais)	1			piment séché	ou ¼ de piment rouge frais
+ptitchef	1 sachet de 90 g de pépites à la nougatine	1	sachet de 90 g	de	pépites à la nougatine	
+ptitchef	Origan				Origan	
+ptitchef	Piment				Piment	
+ptitchef	2 oeufs	2			oeufs	
+ptitchef	Sel				Sel	
+ptitchef	50 g de sucre roux	50	g	de	sucre roux	
+ptitchef	10 fines tranches de lard	10	fines tranches	de	lard	
+ptitchef	70 gr de farine bio T65 - 254 calories	70	gr	de	farine bio	T65 - 254 calories
+ptitchef	1 poivron rouge	1			poivron rouge	
+ptitchef	300 g de viande hachée à 5% MG	300	g	de	viande hachée	à 5% MG
+ptitchef	2 jaunes d'oeuf (avec les blancs, j'ai fait des rochers à la noix de coco)	2			jaunes d'oeuf	avec les blancs, j'ai fait des rochers à la noix de coco
+ptitchef	1/4 c. à thé de gros sel	1/4	c. à thé	de	gros sel	
+ptitchef	12 filets de cailles	12	filets	de	cailles	
+ptitchef	2 c. à soupe de graines de courge	2	c. à soupe	de	graines de courge	
+ptitchef	130 gr de beurre de cacahuète « creamy »	130	gr	de	beurre de cacahuète	« creamy »
+ptitchef	2-3 courgettes (selon la taille)	2-3			courgettes	selon la taille
+ptitchef	500g de mascarpone	500	g	de	mascarpone	
+ptitchef	sel				sel	
+ptitchef	1 pincée de sel	1	pincée	de	sel	
+ptitchef	Huile d'olive				Huile d'olive	
+ptitchef	1 oeuf (1 blanc et 1 jaune)	1			oeuf	1 blanc et 1 jaune
+ptitchef	Fines herbes				Fines herbes	
+ptitchef	1 pâte brisée	1			pâte brisée	
+ptitchef	1/2 sachet de levure de boulanger	1/2	sachet	de	levure de boulanger	
+ptitchef	1 càc de curcuma	1	càc	de	curcuma	
+ptitchef	Sel				Sel	
+ptitchef	1 pincée de sel	1	pincée	de	sel	
+ptitchef	6 tranches de jambon de pays	6	tranches	de	jambon de pays	
+ptitchef	125 g de sucre glace	125	g	de	sucre glace	
+ptitchef	Quelques feuilles de menthe (ciselées très finement ; facultatif)	Quelques	feuilles	de	menthe	ciselées très finement ; facultatif
+ptitchef	Tempura (en sachet)				Tempura	en sachet
+ptitchef	½ sachet de levure chimique	½	sachet	de	levure chimique	
+ptitchef	1 courgette	1			courgette	
+ptitchef	500 gr de rhubarbe	500	gr	de	rhubarbe	
+ptitchef	3 oeufs	3			oeufs	
+ptitchef	50gr. de beurre (ou margarine gout beurre sans cholestérol).	50	gr.	de	beurre	(ou margarine gout beurre sans cholestérol).
+ptitchef	une echalotte	une			echalotte	
+ptitchef	1/2 verre de vinaigre de framboises	1/2	verre	de	vinaigre de framboises	
+ptitchef	1/2 bouteille de coulis de tomates	1/2	bouteille	de	coulis de tomates	
+ptitchef	une feuille de menthe	une	feuille	de	menthe	
+ptitchef	-120g de sucre	-120	g	de	sucre	
+ptitchef	-1 gros oignon émincé	-1			gros oignon émincé	
+ptitchef	3 cuillères à soupe de miel (facultatif)	3	cuillères à soupe	de	miel	facultatif
+ptitchef	1/4 c. à thé de piment broyées, ou plus au goût	1/4	c. à thé	de	piment broyées,	ou plus au goût
+ptitchef	1 piment séché (facultatif)	1			piment séché	facultatif
+ptitchef	-25 gr de beurre.	-25	gr	de	beurre.	
+ptitchef	1/2 poivron jaune	1/2			poivron jaune	
+ptitchef	1/2 cuillère à café de sel	1/2	cuillère à café	de	sel	
+ptitchef	1/2 bouquet de persil	1/2	bouquet	de	persil	
+ptitchef	1 trait de jus de citron vert (facultatif)	1	trait	de	jus de citron vert	facultatif
+ptitchef	1/2 oignon	1/2			oignon	
+ptitchef	1/2 cuillère à café de poivron	1/2	cuillère à café	de	poivron	
+ptitchef	2/3 tasse farine de seigle	2/3	tasse		farine de seigle	
+ptitchef	1/2 oignon	1/2			oignon	
+ptitchef	farine: 1 tasse environ	1			farine:	tasse environ
+ptitchef	2 c. à soupe de flocons d'avoine (optionnel)	2	c. à soupe	de	flocons d'avoine	optionnel
+ptitchef	Poulet en morceaux: 1,2 kg environ	1,2	kg		Poulet en morceaux:	environ
+ptitchef	100g de d'avocat (bien mur écrasé finement)	100	g	de d'	avocat	bien mur écrasé finement
+ptitchef	75 gr de chorizo (doux ou fort selon vos goûts)	75	gr	de	chorizo	doux ou fort selon vos goûts
+ptitchef	6 ou 7 brins de coriandre	6 ou 7	brins	de	coriandre	
+ptitchef	Arôme de vanille (facultatif)				Arôme de vanille	facultatif
+ptitchef	20 à 25 g de gingembre (à votre convenance)	20 à 25	g	de	gingembre	à votre convenance
+ptitchef	3 à 4 grosses figues fraîches	3 à 4			figues fraîches	grosses
+ptitchef	15g de sucre (FACULTATIF , moi je n'en met pas.)	15	g	de	sucre	FACULTATIF , moi je n'en met pas.
+ptitchef	1 crépine (facultatif)	1			crépine	facultatif
+ptitchef	3 à 4 clous de girofle	3 à 4			clous de girofle	
+ptitchef	3 à 4 gouttes d’extrait d’amande amère	3 à 4	gouttes	d’	extrait d’amande amère	
+ptitchef	16 à 20 framboises	16 à 20			framboises	
+ptitchef	2 à 3 éclats d'ail	2 à 3	éclats	d'	ail	
+ptitchef	1-2 c. à soupe d'huile d'olive	1-2	c. à soupe	d'	huile d'olive	
