@@ -253,8 +253,11 @@ func preparationFinale(texte string, p *Pack) (reste, note string) {
 		return texte, ""
 	}
 	segment := strings.TrimSpace(texte[virgule+1:])
+	// Une tête vide rendrait un aliment vide : « , hachés finement » vaut
+	// mieux lu tel quel. Un segment vide, lui, n'a aucune préparation et
+	// retombe sur le refus ci-dessous.
 	tete := strings.TrimSpace(texte[:virgule])
-	if segment == "" || tete == "" {
+	if tete == "" {
 		return texte, ""
 	}
 	preparation := false

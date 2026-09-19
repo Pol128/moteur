@@ -409,6 +409,8 @@ func TestPreparationApresVirguleFinaleVaEnNote(t *testing.T) {
 		// Seule la dernière virgule est une frontière : « mondées » n'est pas
 		// détaché, il appartient au nom tel que la source l'écrit.
 		{"3 tomates mondées, épépinées", "3 ·  ·  · tomates mondées", "épépinées"},
+		// La dernière, et pas la première : l'énumération reste entière.
+		{"1 oignon, 1 carotte, émincés", "1 ·  ·  · oignon, 1 carotte", "émincés"},
 	}
 	for _, c := range cas {
 		lu := verifie(t, c.ligne, c.attendu)
@@ -425,6 +427,12 @@ func TestLaVirguleQuiSepareDeuxAlimentsNEstPasUneNote(t *testing.T) {
 	cas := []struct{ ligne, attendu string }{
 		{"Sel, poivre", "∅ ·  ·  · Sel, poivre"},
 		{"quelques grains de café, chocolat noir", "3 · grain · de · café, chocolat noir"},
+		// L'habillage ne se suffit pas à lui-même : sans participe, le segment
+		// n'est pas une préparation.
+		{"2 oignons, finement", "2 ·  ·  · oignons, finement"},
+		// Et la ligne qui n'est que préparation garde son texte : un aliment
+		// vide vaudrait moins que la ligne fautive telle quelle.
+		{", hachés finement", "∅ ·  ·  · hachés finement"},
 	}
 	for _, c := range cas {
 		lu := verifie(t, c.ligne, c.attendu)
