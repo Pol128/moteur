@@ -33,7 +33,7 @@ ligne s'y résout :
 pack, lexique, err := moteur.FR()
 moteur.Lit("3 tomates", pack, lexique).Aliment      // « tomate »
 moteur.Lit("1 oignon brun", pack, lexique).Aliment  // « oignon jaune » — alias déclaré
-moteur.Lit("2 oignons", pack, lexique).Aliment      // « oignons » — pas d'entrée « oignon »
+moteur.Lit("2 oignons", pack, lexique).Aliment      // « oignon » — le pluriel de l'entrée
 ```
 
 C'est ce qui permet de rapprocher « 2 oignons » et « 3 oignon » : liste de
@@ -107,6 +107,13 @@ sans que quelqu'un le change explicitement.
 Ce qu'il mesure est la **segmentation**, pas la résolution : la comparaison
 porte sur `AlimentTexte`, ce que la ligne écrit et ce que l'annotateur a relu.
 La forme canonique se vérifie ailleurs, sur les entrées du lexique.
+
+`TestResolutionDuJeuDeReference` mesure l'autre moitié : la part des aliments
+annotés qui tombent sur une entrée du lexique, pluriels et alias compris. Elle
+ne juge pas la découpe mais la couverture du référentiel, elle a son propre
+plancher dans le même entête — `# plancher-resolution:` —, et elle monte avec
+le lexique. Le référentiel ne prétend pas à l'exhaustivité : il se complète au
+fil des manques constatés, et le plancher interdit seulement de redescendre.
 
 ## En ligne de commande
 
