@@ -66,6 +66,12 @@ en_tete = ["du", "de la", "de l'", "des"]
 separateur_decimal = ","                    # « 0,5 » ; le point existe aussi
 separateurs_fraction = ["/"]                # 3 271 lignes en « 1/2 »
 separateurs_intervalle = ["à", "-", "ou"]   # « 2 à 3 gousses » : 552 lignes
+# « 250 gramme(s) + 200 gramme(s) de Coulis de framboises » : deux termes d'une
+# même quantité, chez cuisineaz. La somme n'a lieu que si les termes portent la
+# même unité et que l'aliment ne paraît qu'après le dernier — sans quoi
+# « 2 oeufs + 1 jaune » ferait trois oeufs. Le séparateur mesuré est
+# typographique ; un séparateur en lettres demanderait une frontière de mot.
+separateurs_addition = ["+"]
 
 # Valeur exacte, écrite en toutes lettres.
 [quantites.litterales]
