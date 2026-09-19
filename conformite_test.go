@@ -168,6 +168,15 @@ func TestResolutionCompteLesAlimentsQuiTombentSurUneEntree(t *testing.T) {
 	if part, inconnues := Resolution(lignes, p, nil); part != 0 || len(inconnues) != 4 {
 		t.Errorf("sans lexique : taux %.3f et %d inconnues, attendu 0 et 4", part, len(inconnues))
 	}
+
+	// Sans occurrence du tout, le taux vaut 0 — pas NaN. La nuance n'est pas
+	// cosmétique : NaN est incomparable, donc « part < plancher » est faux
+	// quoi qu'il arrive, et le garde-fou du jeu annoté passerait au vert sur
+	// un corpus vide, exactement quand il devrait crier.
+	vide := []LigneRef{{Source: "x", Brut: "sel et poivre", Aliment: ""}}
+	if part, inconnues := Resolution(vide, p, lexique); math.IsNaN(part) || part != 0 || inconnues != nil {
+		t.Errorf("sans occurrence : taux %v et %d inconnues, attendu 0 et aucune", part, len(inconnues))
+	}
 }
 
 // Le garde-fou du référentiel, jumeau de TestJeuDeReference : le taux mesuré
