@@ -283,3 +283,59 @@ func TexteQuantite(valeur *float64) string {
 	}
 	return formateNombre(*valeur)
 }
+
+// ------------------------------------------- le taux de résolution
+
+var motifPlancherResolution = regexp.MustCompile(`plancher-resolution:\s*([\d.]+)`)
+
+// PlancherResolution lit « # plancher-resolution: 0.575 » dans l'entête du jeu.
+//
+// C'est un plancher à part, et pas un second chiffre sur la même ligne : les
+// deux mesures ne disent pas la même chose — l'une juge la découpe, l'autre la
+// couverture du référentiel — et elles ne montent pas ensemble. Compléter le
+// lexique ne redécoupe rien, et redécouper ne comble aucun manque.
+func PlancherResolution(texte string) float64 {
+	for _, brut := range strings.Split(texte, "\n") {
+		if !strings.HasPrefix(brut, "#") {
+			continue
+		}
+		if trouve := motifPlancherResolution.FindStringSubmatch(brut); trouve != nil {
+			return versNombre(trouve[1])
+		}
+	}
+	return 0
+}
+
+// Resolution mesure la part des occurrences dont l'aliment tombe sur une entrée
+// du référentiel, et rend les formes qui n'en ont pas — celles par lesquelles
+// le lexique se complète.
+//
+// Elle part de l'aliment **annoté**, jamais de ce que le parser lit : c'est le
+// référentiel qu'elle juge, pas la découpe. Mesurée sur la sortie du parser,
+// une ligne mal segmentée ferait baisser un taux qui prétend parler du lexique,
+// et les deux garde-fous du jeu annoté se contamineraient l'un l'autre.
+//
+// Une ligne sans aliment annoté n'est pas une occurrence : elle ne compte ni
+// au numérateur, ni au dénominateur.
+func Resolution(lignes []LigneRef, p *Pack, lexique Resolveur) (float64, []string) {
+	occurrences, resolues := 0, 0
+	var inconnues []string
+	for _, ligne := range lignes {
+		forme := p.Normalise(ligne.Aliment)
+		if forme == "" {
+			continue
+		}
+		occurrences++
+		if lexique != nil {
+			if _, trouvee := lexique.Resout(forme); trouvee {
+				resolues++
+				continue
+			}
+		}
+		inconnues = append(inconnues, forme)
+	}
+	if occurrences == 0 {
+		return 0, nil
+	}
+	return float64(resolues) / float64(occurrences), inconnues
+}

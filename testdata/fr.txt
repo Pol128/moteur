@@ -13,6 +13,12 @@
 #   moment de l'export. Le test `tests/test_testdata.py` refuse de descendre
 #   en dessous : c'est le garde-fou contre les régressions.
 #
+# plancher-resolution: 0.575
+#   Part des aliments annotés qui tombent sur une entrée du lexique
+#   embarqué, pluriels et alias compris. Elle ne juge pas la découpe mais la
+#   couverture du référentiel, et monte avec lui : `TestResolutionDuJeuDeReference`
+#   refuse de descendre en dessous.
+#
 # source	brut	quantité	unité	partitif	aliment	note
 750g	Thym				Thym	
 750g	Sel ou sel fin				Sel	ou sel fin
