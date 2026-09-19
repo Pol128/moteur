@@ -115,6 +115,19 @@ plancher dans le même entête — `# plancher-resolution:` —, et elle monte a
 le lexique. Le référentiel ne prétend pas à l'exhaustivité : il se complète au
 fil des manques constatés, et le plancher interdit seulement de redescendre.
 
+Ces deux mesures sont agrégées, et c'est leur angle mort : le lexique pourrait
+perdre la totalité de ses « Poissons et fruits de mer » sans qu'elles bronchent,
+tant que le total tient. `TestPlanchersParCategorie` tient la distribution —
+un plancher par catégorie, dans `testdata/categories_fr.txt`, confronté au
+décompte que `Lexique.ParCategorie` tient sur les entrées. Ajouter des entrées
+laisse le test vert, et une catégorie nouvelle est signalée plutôt que refusée ;
+seule une perte échoue. Après un enrichissement du lexique, les planchers se
+relèvent par une commande :
+
+```sh
+go test -run TestPlanchersParCategorie -maj-planchers
+```
+
 ## En ligne de commande
 
 ```sh
