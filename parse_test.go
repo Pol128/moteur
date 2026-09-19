@@ -391,3 +391,54 @@ func TestAdditionRefuseeQuandLesUnitesDifferent(t *testing.T) {
 	verifie(t, "250 g + 2 cuillères à soupe de crème fraîche",
 		"250 · gramme ·  · + 2 cuillères à soupe de crème fraîche")
 }
+
+// ---------------------- MOTEUR-2 : le motif inversé « Aliment : quantité »
+
+// Sept lignes de l'instance échouaient complètement, toutes sur le même motif :
+// la quantité écrite *après* l'aliment, séparée par deux points. Le séparateur
+// se déclare dans le pack ; ce qui suit vérifie la règle, pas son orthographe.
+//
+// L'aliment garde la casse de la source — « Aubergines », pas « aubergines » :
+// le moteur ne recase rien nulle part (le jeu de référence annote « Thym »,
+// « Bouillon cube(s) ») et l'égalité du projet passe par `Normalise`. C'est le
+// seul écart à l'énoncé de la tâche, qui écrit les quatre aliments en
+// minuscules.
+func TestMotifInverse(t *testing.T) {
+	lu := verifie(t, "Aubergines : 500 g", "500 · gramme ·  · Aubergines")
+	verifieMotif(t, lu, "aliment_quantite")
+	if lu.Unite == nil || lu.Unite.Abrev != "g" {
+		t.Errorf("abréviation : %q, attendu %q", lu.UniteCle(), "g")
+	}
+
+	verifie(t, "Chapelure : 100 g", "100 · gramme ·  · Chapelure")
+	verifie(t, "Huile d'olive : 2 cs", "2 · cuillere_a_soupe ·  · Huile d'olive")
+}
+
+// La quantité seule, sans unité : c'est la moitié du motif qui n'a pas d'unité
+// à lire, et la lecture ne doit pas s'y dérober.
+func TestMotifInverseSansUnite(t *testing.T) {
+	lu := verifie(t, "Oeuf : 1", "1 ·  ·  · Oeuf")
+	verifieMotif(t, lu, "aliment_quantite")
+	if lu.Unite != nil {
+		t.Errorf("unité %q, attendu aucune", lu.UniteCle())
+	}
+}
+
+// Le garde-fou, et la raison d'être du « et rien d'autre » : un en-tête de
+// section porte un aliment derrière son unité. La règle inversée ne s'y
+// déclenche pas — sinon « Pour la sauce » deviendrait l'aliment de la ligne.
+//
+// Écart à l'énoncé, qui attend ici l'aliment « crème » : la ligne est rendue
+// telle que le moteur la lit aujourd'hui, en aliment nu. Retenir « crème »
+// demande une règle d'en-tête de section, que cette tâche ne demande pas.
+func TestMotifInverseNeMordPasSurLesEnTetes(t *testing.T) {
+	lu := verifie(t, "Pour la sauce : 2 cs de crème",
+		"∅ ·  ·  · Pour la sauce : 2 cs de crème")
+	verifieMotif(t, lu, "aliment_nu")
+}
+
+// L'autre non-régression demandée : une ligne sans séparateur est inchangée.
+func TestMotifInverseIgnoreLaLigneSansSeparateur(t *testing.T) {
+	verifieMotif(t, verifie(t, "500 g de beurre", "500 · gramme · de · beurre"),
+		"quantite_unite_partitif")
+}
