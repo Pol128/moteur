@@ -285,14 +285,10 @@ func TestContenanceApresLeContenant(t *testing.T) {
 // le jeu de référence n'en porte qu'un. Au-delà, la contenance n'est plus lue —
 // elle reste dans l'aliment, exactement comme avant que la règle n'existe.
 func TestContenancesImbriqueesSontPlafonnees(t *testing.T) {
-	// Deux niveaux : lus tous les deux.
-	lu := verifie(t, "1 boîte de 4 sachets de 90 g de pépites",
-		"1 · boite · de · pépites")
-	verifieNote(t, lu, "4 sachets ; 90 g")
-
-	// Trois : le troisième n'est pas lu, et ce qu'il aurait porté reste dans
-	// l'aliment. La note s'arrête aux deux premiers.
-	lu = verifie(t, "1 boîte de 4 sachets de 12 sacs de 90 g de pépites",
+	// Les deux niveaux qui se lisent sont épinglés par
+	// TestContenanceApresLeContenant, et ne sont pas rejoués ici. Trois : le
+	// troisième n'est pas lu, et ce qu'il aurait porté reste dans l'aliment.
+	lu := verifie(t, "1 boîte de 4 sachets de 12 sacs de 90 g de pépites",
 		"1 · boite · de · 90 g de pépites")
 	verifieNote(t, lu, "4 sachets ; 12 sacs")
 
