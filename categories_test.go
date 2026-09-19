@@ -149,7 +149,9 @@ func TestFormatDesPlanchers(t *testing.T) {
 // La régénération doit pouvoir tourner deux fois de suite sans rien changer :
 // sinon `git diff` n'est jamais vide et le fichier bouge à chaque cycle.
 func TestLaRegenerationEstIdempotente(t *testing.T) {
-	comptes := map[string]int{"Légumes": 104, "Œufs": 4, "Herbes et épices": 115}
+	// Insérées à rebours du tri attendu : ce que la carte rendra, quel que
+	// soit l'ordre d'itération, ne sera pas trié par accident.
+	comptes := map[string]int{"Œufs": 4, "Légumes": 104, "Herbes et épices": 115}
 
 	texte := ecritPlanchers(comptes)
 	relus, err := lisPlanchers(texte)
@@ -166,6 +168,24 @@ func TestLaRegenerationEstIdempotente(t *testing.T) {
 	}
 	if encore := ecritPlanchers(relus); encore != texte {
 		t.Error("deux écritures du même décompte ne donnent pas le même texte")
+	}
+
+	// Et le tri est ce qui le garantit. Comparer deux écritures ne suffit
+	// pas : l'itération d'une carte est aléatoire, donc deux écritures non
+	// triées coïncident une fois sur deux — mesuré. L'ordre se vérifie donc
+	// directement, sur le texte produit.
+	var categories []string
+	for _, ligne := range strings.Split(texte, "\n") {
+		if strings.HasPrefix(ligne, "#") || strings.TrimSpace(ligne) == "" {
+			continue
+		}
+		categories = append(categories, strings.SplitN(ligne, "\t", 2)[0])
+	}
+	if len(categories) != len(comptes) {
+		t.Errorf("%d lignes de catégorie, attendu %d", len(categories), len(comptes))
+	}
+	if !sort.StringsAreSorted(categories) {
+		t.Errorf("catégories non triées : %v", categories)
 	}
 
 	// La commande est dans l'entête : c'est là qu'on la cherche quand le test
