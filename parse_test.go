@@ -13,6 +13,7 @@ package moteur
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -273,6 +274,35 @@ func TestContenanceApresLeContenant(t *testing.T) {
 	// décision qui se prend dans sa propre tâche, pas un oubli.
 	lu = verifie(t, "1 boîte de thon de 140 g", "1 · boite · de · thon de 140 g")
 	verifieNote(t, lu, "")
+}
+
+// L'imbrication des contenances est plafonnée. Chaque niveau relance une
+// lecture complète de ce qui reste de la ligne, et litCorps y rescanne tous les
+// débuts de mots : sans plafond, le coût de lecture est cubique en longueur, et
+// rien ne borne cette longueur — les lignes viennent de sites tiers.
+//
+// Deux niveaux suffisent : c'est le plus profond que le corpus ait produit, et
+// le jeu de référence n'en porte qu'un. Au-delà, la contenance n'est plus lue —
+// elle reste dans l'aliment, exactement comme avant que la règle n'existe.
+func TestContenancesImbriqueesSontPlafonnees(t *testing.T) {
+	// Deux niveaux : lus tous les deux.
+	lu := verifie(t, "1 boîte de 4 sachets de 90 g de pépites",
+		"1 · boite · de · pépites")
+	verifieNote(t, lu, "4 sachets ; 90 g")
+
+	// Trois : le troisième n'est pas lu, et ce qu'il aurait porté reste dans
+	// l'aliment. La note s'arrête aux deux premiers.
+	lu = verifie(t, "1 boîte de 4 sachets de 12 sacs de 90 g de pépites",
+		"1 · boite · de · 90 g de pépites")
+	verifieNote(t, lu, "4 sachets ; 12 sacs")
+
+	// Et le plafond tient quel que soit le nombre de niveaux écrits : une ligne
+	// qui répète le motif ne se lit pas plus profond que deux.
+	// Ligne et note sont tronquées dans le message : sans plafond elles font
+	// 4,5 ko chacune, et c'est précisément ce que le test refuse.
+	if lu = litAvec(t, "1 boîte"+strings.Repeat(" de 1 g", 640)+" de tomates", nil); lu.Note != "1 g ; 1 g" {
+		t.Errorf("640 niveaux écrits : note %.40q…, attendu \"1 g ; 1 g\"", lu.Note)
+	}
 }
 
 func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
