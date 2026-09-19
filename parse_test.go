@@ -260,8 +260,23 @@ func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
 	verifieNote(t, verifie(t, "1 gousse d'ail", "1 · gousse · d' · ail"), "")
 	verifieNote(t, verifie(t, "1 boîte de conserve de tomates",
 		"1 · boite · de · tomates"), "")
+	// Les deux lignes du jeu de référence que la quantité protège : sans elle,
+	// « feuilles » et « zeste » passeraient pour des contenances.
+	verifie(t, "15 gr de feuilles de basilic", "15 · gramme · de · feuilles de basilic")
+	verifie(t, "1 c. à café de zeste d'orange râpé",
+		"1 · cuillere_a_cafe · de · zeste d'orange râpé")
+	// Et sa symétrique en fin de ligne : « huile de noix » garde son nom entier,
+	// faute de quantité devant l'unité.
+	verifie(t, "huile de noix", "∅ ·  ·  · huile de noix")
 	// « 796 ml » sans rien derrière est un aliment, pas une contenance.
 	verifie(t, "1 boîte de 796 ml", "1 · boite · de · 796 ml")
+	// Et une ligne tronquée ne vide pas l'aliment : il faut un aliment derrière
+	// la contenance, comme il faut un aliment devant la mesure terminale.
+	verifie(t, "1 boîte de 796 ml de", "1 · boite · de · 796 ml de")
+	verifie(t, ", de 2 kg", "∅ ·  ·  · de 2 kg")
+	// « 4 personnes » n'est pas une mesure : il faut une unité, pas seulement
+	// un nombre derrière le partitif.
+	verifie(t, "1 plat de 4 personnes", "1 ·  ·  · plat de 4 personnes")
 
 	// La distinction lexicale n'est pas touchée : avec un partitif, le lexique
 	// ne prime toujours pas (cf. TestLexiqueAvecPartitifNePrimePas).
