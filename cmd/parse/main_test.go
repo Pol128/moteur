@@ -104,10 +104,10 @@ func TestDesaccordsEcritLaListeSansChangerLeVerdict(t *testing.T) {
 
 	// Deux lignes annotées faux, une juste : l'ordre du fichier est celui de
 	// `fr.txt`, celui du résultat est trié, et le doublon reste.
-	jeu := "# plancher: 0.000\n" +
-		"x\t2 càs de sucre\t2\tcuillères à soupe\tde\tsucre\t\n" +
+	lignes := "x\t2 càs de sucre\t2\tcuillères à soupe\tde\tsucre\t\n" +
 		"x\t500 g de beurre\t1\tg\tde\tbeurre\t\n" +
 		"x\t500 g de beurre\t1\tg\tde\tbeurre\t\n"
+	jeu := "# plancher: 0.000\n" + lignes
 
 	dossier := t.TempDir()
 	chemin := filepath.Join(dossier, "fr.txt")
@@ -130,7 +130,7 @@ func TestDesaccordsEcritLaListeSansChangerLeVerdict(t *testing.T) {
 
 	// Le drapeau ne rattrape pas un plancher manqué : le fichier est écrit,
 	// et le code de sortie reste celui du verdict.
-	haut := "# plancher: 1.000\n" + jeu
+	haut := "# plancher: 1.000\n" + lignes
 	if err := os.WriteFile(chemin, []byte(haut), 0o644); err != nil {
 		t.Fatal(err)
 	}

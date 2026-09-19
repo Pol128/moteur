@@ -1,0 +1,55 @@
+# Les lignes de testdata/fr.txt que le parser ne lit pas comme l'annotateur.
+#
+# Le plancher d'accord dit combien de lignes sont fausses ; ce fichier dit
+# lesquelles. Sans lui, une modification qui en corrige cinq et en casse cinq
+# autres laisse le taux identique et le test vert.
+#
+# Une valeur brute par ligne, doublons compris — « brut » n'est pas une clé
+# unique —, triée par ordre d'octets. Les lignes # et les lignes vides sont
+# ignorées, comme dans fr.txt. Ne pas retoucher à la main : régénérer.
+#
+#   go run ./cmd/parse --jeu testdata/fr.txt --desaccords testdata/desaccords.txt
+
+-25 gr de beurre.
+1 boîte de marrons entiers (400 g) ou 1 bocal de marrons entiers
+1 càs Parmesan (râpé)
+1 foie gras frais de canard à température ambiante
+1 pincée de sel ou sel fin
+1 pâte brisée Tarte en or
+1 sachet de 90 g de pépites à la nougatine
+1,5 litres de fond de volaille en pâte Ariake
+1-2 c. à soupe d'huile d'olive
+1/4 c. à thé de piment broyées, ou plus au goût
+1/4 de litre de crème entière liquide
+100g de d'avocat (bien mur écrasé finement)
+120 g de crème entière liquide à 35% de matière grasse
+130 gr de beurre de cacahuète « creamy »
+135 g de jus de citron frais (4 à 5 pièces) ou purée de citron Ravifruit
+140 g de farine type 55
+140 g de farine type 55
+140 g de farine type 55
+16 à 20 framboises
+2 petits avocats coupés en cubes
+2 à 3 éclats d'ail
+2-3 courgettes (selon la taille)
+20 à 25 g de gingembre (à votre convenance)
+3 à 4 clous de girofle
+3 à 4 gouttes d’extrait d’amande amère
+3 à 4 grosses figues fraîches
+300 g de viande hachée à 5% MG
+4 branche(s) Branche fraîche de romarin légèrement brûlée
+4 pincées de Sel de Guérande Netto
+500 g Farine T55
+6 ou 7 brins de coriandre
+6 tiges d'oignons nouveaux ou Cébettes
+60 g Parmesan (râpé)
+70 gr de farine bio T65 - 254 calories
+80 à 120 g d'anisette (Cristal anis)
+Poulet en morceaux: 1,2 kg environ
+Sel ou sel fin
+Sel ou sel fin
+Une dizaine de pignons de pin
+farine: 1 tasse environ
+quelques cerises fraîches
+quelques fraises du jardin (facultatif)
+un peu d'eau
