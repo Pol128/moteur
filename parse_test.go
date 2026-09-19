@@ -427,6 +427,10 @@ func TestLaVirguleQuiSepareDeuxAlimentsNEstPasUneNote(t *testing.T) {
 	cas := []struct{ ligne, attendu string }{
 		{"Sel, poivre", "∅ ·  ·  · Sel, poivre"},
 		{"quelques grains de café, chocolat noir", "3 · grain · de · café, chocolat noir"},
+		// Un participe ne suffit pas non plus s'il traîne un mot que le pack
+		// ne déclare pas : « chocolat râpé » est un second aliment, et c'est
+		// ce cas-là qui coûterait le plus cher.
+		{"quelques grains de café, chocolat râpé", "3 · grain · de · café, chocolat râpé"},
 		// L'habillage ne se suffit pas à lui-même : sans participe, le segment
 		// n'est pas une préparation.
 		{"2 oignons, finement", "2 ·  ·  · oignons, finement"},
