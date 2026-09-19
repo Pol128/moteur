@@ -13,6 +13,7 @@ package moteur
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -74,6 +75,13 @@ func verifieMotif(t *testing.T, lu *Ingredient, attendu string) {
 	t.Helper()
 	if lu.Motif != attendu {
 		t.Errorf("« %s » : motif %s, attendu %s", lu.Brut, lu.Motif, attendu)
+	}
+}
+
+func verifieNote(t *testing.T, lu *Ingredient, attendu string) {
+	t.Helper()
+	if lu.Note != attendu {
+		t.Errorf("« %s » : note %q, attendu %q", lu.Brut, lu.Note, attendu)
 	}
 }
 
@@ -215,6 +223,116 @@ func TestLexiqueAvecPartitifNePrimePas(t *testing.T) {
 	// Et le cas voisin, que le lexique ne connaît pas, reste coupé.
 	if voisin := litAvec(t, "1 gousse d'ail", lexique); voisin.Aliment != "ail" {
 		t.Errorf("« 1 gousse d'ail » : aliment %q", voisin.Aliment)
+	}
+}
+
+// ------------------------ la contenance écrite entre le contenant et l'aliment
+
+func TestContenanceApresLeContenant(t *testing.T) {
+	// « 1 boîte de 796 ml de tomates broyées » : derrière un contenant retenu
+	// comme unité, une seconde mesure n'est pas l'aliment. Le schéma ne porte
+	// qu'un couple quantité/unité — « 1 boîte » le tient déjà —, donc la
+	// contenance part en note, seul endroit où elle survit.
+	lu := verifie(t, "1 boîte de 796 ml (28 oz) de tomates broyées",
+		"1 · boite · de · tomates broyées")
+	verifieNote(t, lu, "796 ml ; 28 oz")
+	verifieMotif(t, lu, "quantite_unite_contenance")
+
+	lu = verifie(t, "1 morceau de 2,5 cm de gingembre frais",
+		"1 · morceau · de · gingembre frais")
+	verifieNote(t, lu, "2,5 cm")
+
+	// La ligne du jeu de référence, mot pour mot (`testdata/fr.txt`, ptitchef).
+	lu = verifie(t, "1 sachet de 90 g de pépites à la nougatine",
+		"1 · sachet · de · pépites à la nougatine")
+	verifieNote(t, lu, "90 g")
+
+	// La variante à poids terminal : la mesure est écrite derrière l'aliment,
+	// et rien n'a été retenu comme unité devant.
+	lu = verifie(t, "1 gigot d'agneau de 2,5 kg", "1 ·  ·  · gigot d'agneau")
+	verifieNote(t, lu, "2,5 kg")
+	verifieMotif(t, lu, "aliment_mesure_terminale")
+
+	// Le trait d'union colle l'unité au nombre : « de 2,5-kg ». La quantité
+	// lue, il reste « -kg », qu'aucune unité ne nomme tant qu'on ne l'a pas
+	// rogné — sans quoi la mesure resterait dans l'aliment.
+	lu = verifie(t, "1 gigot d'agneau de 2,5-kg", "1 ·  ·  · gigot d'agneau")
+	verifieNote(t, lu, "2,5 kg")
+
+	// Contenances imbriquées : « 4 sachets » est la contenance de la boîte, et
+	// « 90 g » celle du sachet. La note les chaîne, du contenant au contenu —
+	// c'est le seul emploi qui justifie la récursion de litContenance.
+	lu = verifie(t, "1 boîte de 4 sachets de 90 g de pépites",
+		"1 · boite · de · pépites")
+	verifieNote(t, lu, "4 sachets ; 90 g")
+
+	// La frontière des deux règles, épinglée : « de 140 g » derrière un
+	// contenant déjà retenu reste dans l'aliment. La contenance se lit entre
+	// le contenant et l'aliment, la mesure terminale à défaut d'unité devant ;
+	// ni l'une ni l'autre ne couvre « contenant + aliment + poids ». Aucune
+	// ligne du corpus relevé par la tâche ne le demande — l'y étendre est une
+	// décision qui se prend dans sa propre tâche, pas un oubli.
+	lu = verifie(t, "1 boîte de thon de 140 g", "1 · boite · de · thon de 140 g")
+	verifieNote(t, lu, "")
+}
+
+// L'imbrication des contenances est plafonnée. Chaque niveau relance une
+// lecture complète de ce qui reste de la ligne, et litCorps y rescanne tous les
+// débuts de mots : sans plafond, le coût de lecture est cubique en longueur, et
+// rien ne borne cette longueur — les lignes viennent de sites tiers.
+//
+// Deux niveaux suffisent : c'est le plus profond que le corpus ait produit, et
+// le jeu de référence n'en porte qu'un. Au-delà, la contenance n'est plus lue —
+// elle reste dans l'aliment, exactement comme avant que la règle n'existe.
+func TestContenancesImbriqueesSontPlafonnees(t *testing.T) {
+	// Les deux niveaux qui se lisent sont épinglés par
+	// TestContenanceApresLeContenant, et ne sont pas rejoués ici. Trois : le
+	// troisième n'est pas lu, et ce qu'il aurait porté reste dans l'aliment.
+	lu := verifie(t, "1 boîte de 4 sachets de 12 sacs de 90 g de pépites",
+		"1 · boite · de · 90 g de pépites")
+	verifieNote(t, lu, "4 sachets ; 12 sacs")
+
+	// Et le plafond tient quel que soit le nombre de niveaux écrits : une ligne
+	// qui répète le motif ne se lit pas plus profond que deux.
+	// Ligne et note sont tronquées dans le message : sans plafond elles font
+	// 4,5 ko chacune, et c'est précisément ce que le test refuse.
+	if lu = litAvec(t, "1 boîte"+strings.Repeat(" de 1 g", 640)+" de tomates", nil); lu.Note != "1 g ; 1 g" {
+		t.Errorf("640 niveaux écrits : note %.40q…, attendu \"1 g ; 1 g\"", lu.Note)
+	}
+}
+
+func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
+	// Il faut une mesure complète derrière le partitif — une quantité *et* son
+	// unité — sans quoi la règle mange l'aliment.
+	verifieNote(t, verifie(t, "250 g de farine", "250 · gramme · de · farine"), "")
+	verifieNote(t, verifie(t, "1 gousse d'ail", "1 · gousse · d' · ail"), "")
+	verifieNote(t, verifie(t, "1 boîte de conserve de tomates",
+		"1 · boite · de · tomates"), "")
+	// Les deux lignes du jeu de référence que la quantité protège : sans elle,
+	// « feuilles » et « zeste » passeraient pour des contenances.
+	verifie(t, "15 gr de feuilles de basilic", "15 · gramme · de · feuilles de basilic")
+	verifie(t, "1 c. à café de zeste d'orange râpé",
+		"1 · cuillere_a_cafe · de · zeste d'orange râpé")
+	// Et sa symétrique en fin de ligne : « huile de noix » garde son nom entier,
+	// faute de quantité devant l'unité.
+	verifie(t, "huile de noix", "∅ ·  ·  · huile de noix")
+	// « 796 ml » sans rien derrière est un aliment, pas une contenance.
+	verifie(t, "1 boîte de 796 ml", "1 · boite · de · 796 ml")
+	// Et une ligne tronquée ne vide pas l'aliment : il faut un aliment derrière
+	// la contenance, comme il faut un aliment devant la mesure terminale.
+	verifie(t, "1 boîte de 796 ml de", "1 · boite · de · 796 ml de")
+	verifie(t, ", de 2 kg", "∅ ·  ·  · de 2 kg")
+	// « 4 personnes » n'est pas une mesure : il faut une unité, pas seulement
+	// un nombre derrière le partitif.
+	verifie(t, "1 plat de 4 personnes", "1 ·  ·  · plat de 4 personnes")
+
+	// La distinction lexicale n'est pas touchée : avec un partitif, le lexique
+	// ne prime toujours pas (cf. TestLexiqueAvecPartitifNePrimePas).
+	p := packFR(t)
+	lexique := Ensemble{p.Normalise("gousse de vanille"): true}
+	if avec := litAvec(t, "1 gousse de vanille", lexique); avec.UniteCle() != "gousse" ||
+		avec.Aliment != "vanille" {
+		t.Errorf("« 1 gousse de vanille » : %s", resume(avec))
 	}
 }
 
