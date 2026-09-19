@@ -329,3 +329,65 @@ func TestBruitReel(t *testing.T) {
 	// un mot tout en capitales n'est pas un marqueur.
 	verifie(t, "1 CUILLERE A SOUPE DE SUCRE", "1 · cuillere_a_soupe · DE · SUCRE")
 }
+
+// ------------------- MOTEUR-4 : « gramme(s) » et le second terme d'une addition
+
+// CuisineAZ écrit le pluriel entre parenthèses — « 4 pavé(s) », 24 000 lignes.
+// Le pack le déclare dans `marques_pluriel` et `Normalise` le replie déjà, mais
+// l'extraction des notes passait avant : la marque en sortait comme la note
+// « s », du bruit affiché sur la fiche.
+func TestMarquePlurielNEstPasUneNote(t *testing.T) {
+	lu := verifie(t, "4 pavé(s) de saumon", "4 · pave · de · saumon")
+	if lu.Note != "" {
+		t.Errorf("note : %q, attendu vide", lu.Note)
+	}
+}
+
+// Non-régression du retrait : une parenthèse qui porte autre chose qu'une
+// marque de pluriel reste une note.
+func TestLesParenthesesRestentDesNotes(t *testing.T) {
+	lu := verifie(t, "1 gousse d'ail (facultatif)", "1 · gousse · d' · ail")
+	if lu.Note != "facultatif" {
+		t.Errorf("note : %q, attendu %q", lu.Note, "facultatif")
+	}
+	if !lu.Optionnel {
+		t.Error("optionnel attendu")
+	}
+}
+
+// « 250 g + 200 g de X » : les deux termes portent la même unité et l'aliment
+// n'apparaît qu'après le dernier — la somme est licite, et les 200 g du second
+// terme étaient purement perdus.
+//
+// L'aliment garde la casse de la source, ici « Coulis de framboises » : le
+// moteur ne recase rien nulle part (le jeu de référence annote « Thym »,
+// « Bouillon cube(s) »), et l'égalité du projet passe par `Normalise`.
+func TestSecondTermeDUneAddition(t *testing.T) {
+	lu := verifie(t, "250 gramme(s) + 200 gramme(s) de Coulis de framboises",
+		"450 · gramme · de · Coulis de framboises")
+	if lu.Note != "" {
+		t.Errorf("note : %q, attendu vide", lu.Note)
+	}
+	if lu.Unite == nil || lu.Unite.Abrev != "g" {
+		t.Errorf("abréviation : %q, attendu %q", lu.UniteCle(), "g")
+	}
+}
+
+// Le garde-fou, et la raison d'être de la condition sur l'unité : « 2 oeufs »
+// et « 1 jaune » sont deux aliments, pas deux termes. Les additionner rendrait
+// trois oeufs.
+func TestAdditionRefuseeQuandUnTermePorteUnAliment(t *testing.T) {
+	lu := verifie(t, "2 oeufs + 1 jaune (pour dorer)", "2 ·  ·  · oeufs + 1 jaune")
+	if lu.Note != "pour dorer" {
+		t.Errorf("note : %q, attendu %q", lu.Note, "pour dorer")
+	}
+}
+
+// L'autre moitié du garde-fou, celle que la passe de sabotage a trouvée
+// découverte : deux termes bien formés, mais d'unités différentes, ne
+// s'additionnent pas davantage. Sans la condition d'unité, « 250 g + 2
+// cuillères à soupe » rendrait 252 cuillères à soupe.
+func TestAdditionRefuseeQuandLesUnitesDifferent(t *testing.T) {
+	verifie(t, "250 g + 2 cuillères à soupe de crème fraîche",
+		"250 · gramme ·  · + 2 cuillères à soupe de crème fraîche")
+}

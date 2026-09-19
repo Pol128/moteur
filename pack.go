@@ -84,6 +84,7 @@ type Pack struct {
 	SeuilPluriel          float64
 	SeparateurDecimal     string
 	SeparateursIntervalle []string
+	SeparateursAddition   []string
 	Apostrophes           []rune // la canonique en tête
 	MarquesPluriel        []string
 
@@ -94,6 +95,8 @@ type Pack struct {
 	motifsApproxTete    []*regexp.Regexp
 	motifsApproxPartout []*regexp.Regexp
 	motifsIntervalle    []*regexp.Regexp
+	motifMarquesPluriel *regexp.Regexp
+	motifAddition       *regexp.Regexp
 }
 
 // NombreDeFormes rend le nombre d'écritures d'unité reconnues, toutes unités
@@ -375,6 +378,7 @@ func Construit(brut map[string]any) (*Pack, error) {
 		SeuilPluriel:          nombreDefaut(table(brut, "flexion"), "seuil_pluriel", 2),
 		SeparateurDecimal:     chaineDefaut(quant, "separateur_decimal", ","),
 		SeparateursIntervalle: chaines(quant, "separateurs_intervalle", nil),
+		SeparateursAddition:   chaines(quant, "separateurs_addition", nil),
 		Apostrophes:           ordonnees,
 		MarquesPluriel:        chaines(ortho, "marques_pluriel", nil),
 		formes:                map[string]*Unite{},

@@ -245,6 +245,15 @@ func Nettoie(brut string) string {
 // Les marqueurs « facultatif » et « optionnel » sont cherchés partout, y
 // compris dans la note qu'on vient de sortir.
 func ExtraitNotes(texte string, p *Pack) (reste, note string, optionnel bool) {
+	// La marque de pluriel entre parenthèses — « 4 pavé(s) », 24 000 lignes
+	// chez CuisineAZ — est une convention typographique, pas un complément.
+	// Elle se retire avant le découpage : `Normalise` la replie déjà, mais il
+	// passe après, et la marque est alors sortie de la ligne comme la note
+	// « s ».
+	if p.motifMarquesPluriel != nil {
+		texte = p.motifMarquesPluriel.ReplaceAllString(texte, "")
+	}
+
 	ouvrants := map[rune]rune{}
 	fermants := map[rune]bool{}
 	for _, paire := range p.Delimiteurs {
@@ -639,6 +648,81 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 	return resultat
 }
 
+// ------------------------------------------------------------------ additions
+
+// terme est un terme d'addition lu seul : sa valeur, et la clé de son unité —
+// vide quand il n'en porte pas.
+type terme struct {
+	valeur float64
+	unite  string
+}
+
+// litTerme lit un terme de tête d'une addition. Il n'accepte qu'« une quantité
+// et son unité, et rien d'autre » : ce qui dépasse est un aliment, et deux
+// aliments ne s'additionnent pas.
+//
+// litCorps ne peut pas servir ici, et c'est le point à ne pas rater : « une
+// unité sans rien derrière est un aliment », donc « 250 gramme » lu seul rend
+// l'aliment *gramme* et aucune unité. C'est une règle du parser, pas un
+// accident — le terme se lit donc par le pack directement.
+func litTerme(texte string, p *Pack) (terme, bool) {
+	quantite, reste := litQuantite(texte, p)
+	// Un intervalle — « 2 à 3 g + 100 g » — n'a pas de somme évidente : on
+	// rend la main plutôt que de trancher.
+	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
+		return terme{}, false
+	}
+	reste = strings.TrimSpace(reste)
+	if reste == "" {
+		return terme{valeur: *quantite.valeur}, true
+	}
+	lue := p.LireUnite(reste)
+	if lue == nil {
+		return terme{}, false
+	}
+	return terme{valeur: *quantite.valeur * lue.Facteur, unite: lue.Unite.Cle}, true
+}
+
+// litAddition rend la somme des termes de tête d'une addition, et le dernier
+// terme — seul porteur de l'aliment.
+//
+// Deux conditions, et la lecture ordinaire de la ligne entière s'il en manque
+// une : tous les termes portent la même unité (ou aucun n'en porte), et aucun
+// terme sauf le dernier ne porte autre chose qu'une quantité. C'est ce
+// garde-fou qui empêche de sommer « 2 oeufs + 1 jaune », deux aliments
+// différents dont la somme ne veut rien dire.
+func litAddition(texte string, p *Pack, aliments Aliments) (tete float64, dernier string, ok bool) {
+	if p.motifAddition == nil {
+		return 0, "", false
+	}
+	termes := p.motifAddition.Split(texte, -1)
+	if len(termes) < 2 {
+		return 0, "", false
+	}
+	dernier = termes[len(termes)-1]
+
+	// Le dernier terme est une ligne complète : son unité se lit par le chemin
+	// ordinaire, celui-là même qui servira ensuite.
+	quantite, reste := litQuantite(dernier, p)
+	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
+		return 0, "", false
+	}
+	lu := litCorps(reste, p, quantite.trouvee, aliments)
+	unite := ""
+	if lu.unite != nil {
+		unite = lu.unite.Cle
+	}
+
+	for _, brut := range termes[:len(termes)-1] {
+		lue, bon := litTerme(brut, p)
+		if !bon || lue.unite != unite {
+			return 0, "", false
+		}
+		tete += lue.valeur
+	}
+	return tete, dernier, true
+}
+
 // ----------------------------------------------------------------------- lire
 
 // Lit lit une ligne d'ingrédient. N'échoue jamais : une ligne illisible rend un
@@ -652,6 +736,13 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 
 	texte, note, optionnel := ExtraitNotes(texte, p)
 	ligne.Note, ligne.Optionnel = note, optionnel
+
+	// « 250 g + 200 g de coulis » : les termes de tête s'ajoutent au dernier,
+	// qui seul porte l'aliment et se lit donc pour la ligne entière.
+	tete, dernier, additionnee := litAddition(texte, p, aliments)
+	if additionnee {
+		texte = dernier
+	}
 
 	quantite, reste := litQuantite(texte, p)
 	ligne.Quantite = quantite.valeur
@@ -681,6 +772,12 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 			facteur := lu.facteur
 			ligne.Quantite = &facteur
 		}
+	}
+
+	// Après le facteur : chaque terme de tête porte déjà le sien.
+	if additionnee && ligne.Quantite != nil {
+		valeur := *ligne.Quantite + tete
+		ligne.Quantite = &valeur
 	}
 
 	if ligne.Indefinie {
@@ -725,4 +822,29 @@ func (p *Pack) compileMotifs() {
 		p.motifsIntervalle = append(p.motifsIntervalle,
 			regexp.MustCompile(`(?i)^\s*`+regexp.QuoteMeta(separateur)+`\s*`))
 	}
+
+	p.motifMarquesPluriel = nil
+	if choix := alternative(p.MarquesPluriel); choix != "" {
+		p.motifMarquesPluriel = regexp.MustCompile(`(?i)(?:` + choix + `)`)
+	}
+	p.motifAddition = nil
+	if choix := alternative(p.SeparateursAddition); choix != "" {
+		// Les séparateurs d'addition mesurés sont typographiques (« + ») : il
+		// n'y a pas de frontière de mot à défendre, contrairement aux
+		// séparateurs d'intervalle, qui sont des mots et s'ancrent en tête.
+		p.motifAddition = regexp.MustCompile(`\s*(?:` + choix + `)\s*`)
+	}
+}
+
+// alternative rend les marqueurs du pack en une alternative d'expression
+// régulière, chacun échappé. Vide quand le pack n'en déclare aucun — et le
+// moteur s'en passe alors, comme de toute règle qu'une langue ne donne pas.
+func alternative(marqueurs []string) string {
+	var choix []string
+	for _, marqueur := range marqueurs {
+		if marqueur != "" {
+			choix = append(choix, regexp.QuoteMeta(marqueur))
+		}
+	}
+	return strings.Join(choix, "|")
 }
