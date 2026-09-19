@@ -2,7 +2,7 @@
  "source": "https://github.com/Rouzax/MealieSync",
  "licence": "MIT",
  "copyright": "Copyright (c) 2025 Rouzax",
- "note": "Extrait de Data/fr/Foods, fusionné et allégé de la description. Le fichier est redistribué tel quel sous licence MIT.",
+ "note": "Extrait de Data/fr/Foods, fusionné et allégé de la description, puis complété pour ce projet : les entrées sans « id » sont les nôtres, celles qui portent un « id » viennent de MealieSync et sont redistribuées telles quelles sous licence MIT.",
  "items": [
   {
    "id": "d20b7d1e-efa9-48d9-94d6-1bf418693778",
@@ -12367,6 +12367,104 @@
     "petits œufs de caille"
    ],
    "label": "Œufs"
+  },
+  {
+   "name": "farine",
+   "pluralName": "farines",
+   "aliases": [],
+   "label": "Produits de boulangerie"
+  },
+  {
+   "name": "levure chimique",
+   "pluralName": "levure chimique",
+   "aliases": [],
+   "label": "Produits de boulangerie"
+  },
+  {
+   "name": "pâte brisée",
+   "pluralName": "pâtes brisées",
+   "aliases": [],
+   "label": "Produits de boulangerie"
+  },
+  {
+   "name": "oignon",
+   "pluralName": "oignons",
+   "aliases": [],
+   "label": "Légumes"
+  },
+  {
+   "name": "thym",
+   "pluralName": "thym",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "origan",
+   "pluralName": "origan",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "menthe",
+   "pluralName": "menthe",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "persil",
+   "pluralName": "persil",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "ciboulette",
+   "pluralName": "ciboulette",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "coriandre",
+   "pluralName": "coriandre",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "curcuma",
+   "pluralName": "curcuma",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "muscade",
+   "pluralName": "muscade",
+   "aliases": [
+    "noix de muscade"
+   ],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "piment",
+   "pluralName": "piments",
+   "aliases": [],
+   "label": "Herbes et épices"
+  },
+  {
+   "name": "yaourt",
+   "pluralName": "yaourts",
+   "aliases": [],
+   "label": "Produits laitiers"
+  },
+  {
+   "name": "crème liquide",
+   "pluralName": "crème liquide",
+   "aliases": [],
+   "label": "Produits laitiers"
+  },
+  {
+   "name": "crème épaisse",
+   "pluralName": "crème épaisse",
+   "aliases": [],
+   "label": "Produits laitiers"
   }
  ],
  "version": "MealieSync main@8ff67a466527 (2026-07-09)"

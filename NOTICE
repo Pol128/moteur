@@ -9,12 +9,19 @@ Le texte intégral de la licence se trouve dans le fichier LICENSE.
 Composants tiers redistribués
 -----------------------------
 
-data/foods_fr.json — lexique d'aliments
+data/foods_fr.json — lexique d'aliments, travail mixte
     Issu du projet MealieSync (https://github.com/Rouzax/MealieSync).
     Licence MIT, Copyright (c) 2025 Rouzax.
     Le texte de cette licence est conservé, attaché aux données, dans
     data/foods_fr.LICENSE. Ce fichier étant embarqué dans le module (go:embed),
     il part dans tout binaire qui importe ce module : la mention doit suivre.
+
+    Le fichier a été complété pour ce projet : des entrées du français qui
+    manquaient au catalogue d'origine y ont été ajoutées, et le seront encore
+    au fil des manques constatés. La licence MIT autorise la modification et
+    la redistribution ; elle ne permet pas d'attribuer ces entrées à Rouzax.
+    Les reconnaître ne demande rien de plus que de les regarder : les entrées
+    de MealieSync portent un « id », les nôtres n'en ont pas.
 
 lang/fr.toml — pack de langue française
     Écrit pour ce projet, dérivé de l'observation d'un corpus de recettes.
