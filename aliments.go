@@ -46,8 +46,9 @@ type Entree struct {
 // Lexique indexe chaque forme normalisée vers l'entrée qui la porte : le nom,
 // le pluriel et chacun des alias mènent à la même Entree.
 type Lexique struct {
-	formes  map[string]Entree
-	Entrees int
+	formes     map[string]Entree
+	categories map[string]int
+	Entrees    int
 }
 
 // Contient satisfait Aliments.
@@ -68,6 +69,27 @@ func (l *Lexique) Resout(nomNormalise string) (Entree, bool) {
 	}
 	entree, trouvee := l.formes[nomNormalise]
 	return entree, trouvee
+}
+
+// ParCategorie rend le nombre d'entrées que le lexique porte dans chaque
+// catégorie — le champ `label` des données.
+//
+// Le décompte se tient au chargement, sur les entrées, et non en parcourant
+// l'index des formes : le nom, le pluriel et chaque alias y mènent à la même
+// Entree, et les compter surcompterait chaque catégorie dans la proportion de
+// ses alias.
+//
+// Une entrée sans label n'a pas de catégorie et n'en crée pas une vide.
+func (l *Lexique) ParCategorie() map[string]int {
+	if l == nil {
+		return nil
+	}
+	// Une copie : le décompte est une vue, pas l'état interne.
+	comptes := make(map[string]int, len(l.categories))
+	for categorie, compte := range l.categories {
+		comptes[categorie] = compte
+	}
+	return comptes
 }
 
 // Formes rend le nombre d'écritures reconnues.
@@ -124,13 +146,20 @@ func LisAliments(contenu []byte, p *Pack) (*Lexique, error) {
 	if err := json.Unmarshal(contenu, &fichier); err != nil {
 		return nil, err
 	}
-	lexique := &Lexique{formes: map[string]Entree{}, Entrees: len(fichier.Items)}
+	lexique := &Lexique{
+		formes:     map[string]Entree{},
+		categories: map[string]int{},
+		Entrees:    len(fichier.Items),
+	}
 	titres := map[string]titreForme{}
 	for _, item := range fichier.Items {
 		// Le pluriel est retenu séparément et non déduit : « cœurs
 		// d'artichaut » met la marque sur le premier mot, pas sur le dernier,
 		// et aucune règle simple ne le devine.
 		entree := Entree{Nom: item.Nom, Pluriel: item.Pluriel, Label: item.Label}
+		if item.Label != "" {
+			lexique.categories[item.Label]++
+		}
 		poser := func(brute string, titre titreForme) {
 			forme := p.Normalise(brute)
 			if forme == "" {

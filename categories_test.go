@@ -50,10 +50,10 @@ func TestParCategorieCompteLesEntreesPasLesFormes(t *testing.T) {
 		t.Fatalf("lecture du lexique : %v", err)
 	}
 
-	// Neuf écritures pour quatre entrées : c'est l'écart que le décompte ne
+	// Onze écritures pour quatre entrées : c'est l'écart que le décompte ne
 	// doit pas reproduire.
-	if lexique.Formes() != 9 {
-		t.Errorf("%d formes, attendu 9", lexique.Formes())
+	if lexique.Formes() != 11 {
+		t.Errorf("%d formes, attendu 11", lexique.Formes())
 	}
 
 	comptes := lexique.ParCategorie()
