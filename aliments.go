@@ -78,6 +78,25 @@ func (l *Lexique) Formes() int {
 	return len(l.formes)
 }
 
+// titreForme dit à quel titre une entrée revendique une forme. Deux entrées
+// peuvent revendiquer la même : le lexique embarqué n'en a aucun cas, mais rien
+// n'interdit à un appelant de fournir le sien.
+//
+// Tant que l'index ne portait qu'un booléen, la collision était sans
+// conséquence — « connue » reste « connue ». Maintenant qu'il porte l'entrée,
+// celle qui gagne emporte le nom canonique : le dernier écrit détournerait
+// « ail » vers « ail des ours » dès qu'une entrée tardive le déclare en alias.
+//
+// Une forme n'est donc reprise que par un titre strictement plus fort, et à
+// titre égal la première entrée lue la garde.
+type titreForme int
+
+const (
+	titreNom titreForme = iota
+	titrePluriel
+	titreAlias
+)
+
 type entreeAliment struct {
 	Nom     string   `json:"name"`
 	Pluriel string   `json:"pluralName"`
@@ -106,16 +125,27 @@ func LisAliments(contenu []byte, p *Pack) (*Lexique, error) {
 		return nil, err
 	}
 	lexique := &Lexique{formes: map[string]Entree{}, Entrees: len(fichier.Items)}
+	titres := map[string]titreForme{}
 	for _, item := range fichier.Items {
 		// Le pluriel est retenu séparément et non déduit : « cœurs
 		// d'artichaut » met la marque sur le premier mot, pas sur le dernier,
 		// et aucune règle simple ne le devine.
 		entree := Entree{Nom: item.Nom, Pluriel: item.Pluriel, Label: item.Label}
-		formes := append([]string{item.Nom, item.Pluriel}, item.Alias...)
-		for _, brute := range formes {
-			if forme := p.Normalise(brute); forme != "" {
-				lexique.formes[forme] = entree
+		poser := func(brute string, titre titreForme) {
+			forme := p.Normalise(brute)
+			if forme == "" {
+				return
 			}
+			if pris, deja := titres[forme]; deja && pris <= titre {
+				return
+			}
+			lexique.formes[forme] = entree
+			titres[forme] = titre
+		}
+		poser(item.Nom, titreNom)
+		poser(item.Pluriel, titrePluriel)
+		for _, alias := range item.Alias {
+			poser(alias, titreAlias)
 		}
 	}
 	return lexique, nil
