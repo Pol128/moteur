@@ -1,0 +1,42 @@
+# Planchers par catégorie du lexique embarqué (data/foods_fr.json).
+#
+# Une tabulation entre la catégorie et son plancher. Ce sont des planchers,
+# pas des comptes exacts : le référentiel s'enrichit au fil des manques, et
+# seule une perte doit faire rougir `TestPlanchersParCategorie`.
+#
+# Fichier produit — ne pas éditer à la main. Après un enrichissement du
+# lexique, relever les planchers avec :
+#
+#   go test -run TestPlanchersParCategorie -maj-planchers
+#
+# 28 catégories, 1332 entrées au total.
+#
+# catégorie	plancher
+Bière	17
+Boissons	16
+Bouillons et exhausteurs de goût	17
+Café et thé	22
+Charcuteries	49
+Collations	4
+Confiseries	43
+Céréales du petit-déjeuner	10
+Fromages	63
+Fruits	96
+Herbes et épices	115
+Herbes fraîches	30
+Huiles, vinaigres et matières grasses	35
+Légumes	104
+Légumineuses	44
+Noix et graines	28
+Pain et pâtisserie	31
+Poissons et fruits de mer	75
+Pommes de terre et tubercules	31
+Produits de boulangerie	71
+Produits laitiers	45
+Pâtes, riz et nouilles	64
+Sauces et condiments	73
+Spiritueux et liqueurs	50
+Viandes	84
+Vins	66
+Volailles	45
+Œufs	4
