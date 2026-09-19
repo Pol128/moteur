@@ -539,7 +539,7 @@ func ajouteNote(note, ajout string) string {
 // vrai ici.
 func litContenance(texte string, p *Pack, aliments Aliments) (mesure string, apres corps, ok bool) {
 	quantite, reste := litQuantite(texte, p)
-	if !quantite.trouvee || quantite.valeur == nil {
+	if quantite.valeur == nil {
 		return "", corps{}, false
 	}
 	lu := litCorps(reste, p, true, aliments)
@@ -558,9 +558,6 @@ func litContenance(texte string, p *Pack, aliments Aliments) (mesure string, apr
 // *kg*. Et il faut un aliment devant, sinon il ne resterait rien à nommer.
 func litMesureTerminale(texte string, p *Pack) (aliment, mesure string, ok bool) {
 	for _, debut := range debutsDeMots(texte) {
-		if debut == 0 {
-			continue
-		}
 		forme := PartitifA(p, texte, debut)
 		if forme == "" {
 			continue
@@ -568,13 +565,15 @@ func litMesureTerminale(texte string, p *Pack) (aliment, mesure string, ok bool)
 		// L'espace qui suit le partitif est encore là, et une quantité ne se lit
 		// qu'ancrée : « de 2,5 kg » ne rendrait rien sans ce coup de ciseaux.
 		quantite, reste := litQuantite(strings.TrimSpace(texte[debut+len(forme):]), p)
-		if !quantite.trouvee || quantite.valeur == nil {
+		if quantite.valeur == nil {
 			continue
 		}
 		reste = strings.Trim(reste, finUnite)
 		if p.LireUnite(reste) == nil {
 			continue
 		}
+		// « , de 2 kg » : l'aliment est déjà rogné de sa ponctuation, donc ce
+		// partitif-là est en tête et il ne reste rien à nommer devant lui.
 		devant := strings.Trim(texte[:debut], finPonctuation)
 		if devant == "" {
 			continue
