@@ -77,6 +77,13 @@ func verifieMotif(t *testing.T, lu *Ingredient, attendu string) {
 	}
 }
 
+func verifieNote(t *testing.T, lu *Ingredient, attendu string) {
+	t.Helper()
+	if lu.Note != attendu {
+		t.Errorf("« %s » : note %q, attendu %q", lu.Brut, lu.Note, attendu)
+	}
+}
+
 // ------------------------------- les sept motifs du français, §5 de la note
 
 func TestMotifsDuFrancais(t *testing.T) {
@@ -215,6 +222,54 @@ func TestLexiqueAvecPartitifNePrimePas(t *testing.T) {
 	// Et le cas voisin, que le lexique ne connaît pas, reste coupé.
 	if voisin := litAvec(t, "1 gousse d'ail", lexique); voisin.Aliment != "ail" {
 		t.Errorf("« 1 gousse d'ail » : aliment %q", voisin.Aliment)
+	}
+}
+
+// ------------------------ la contenance écrite entre le contenant et l'aliment
+
+func TestContenanceApresLeContenant(t *testing.T) {
+	// « 1 boîte de 796 ml de tomates broyées » : derrière un contenant retenu
+	// comme unité, une seconde mesure n'est pas l'aliment. Le schéma ne porte
+	// qu'un couple quantité/unité — « 1 boîte » le tient déjà —, donc la
+	// contenance part en note, seul endroit où elle survit.
+	lu := verifie(t, "1 boîte de 796 ml (28 oz) de tomates broyées",
+		"1 · boite · de · tomates broyées")
+	verifieNote(t, lu, "796 ml ; 28 oz")
+	verifieMotif(t, lu, "quantite_unite_contenance")
+
+	lu = verifie(t, "1 morceau de 2,5 cm de gingembre frais",
+		"1 · morceau · de · gingembre frais")
+	verifieNote(t, lu, "2,5 cm")
+
+	// La ligne du jeu de référence, mot pour mot (`testdata/fr.txt`, ptitchef).
+	lu = verifie(t, "1 sachet de 90 g de pépites à la nougatine",
+		"1 · sachet · de · pépites à la nougatine")
+	verifieNote(t, lu, "90 g")
+
+	// La variante à poids terminal : la mesure est écrite derrière l'aliment,
+	// et rien n'a été retenu comme unité devant.
+	lu = verifie(t, "1 gigot d'agneau de 2,5 kg", "1 ·  ·  · gigot d'agneau")
+	verifieNote(t, lu, "2,5 kg")
+	verifieMotif(t, lu, "aliment_mesure_terminale")
+}
+
+func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
+	// Il faut une mesure complète derrière le partitif — une quantité *et* son
+	// unité — sans quoi la règle mange l'aliment.
+	verifieNote(t, verifie(t, "250 g de farine", "250 · gramme · de · farine"), "")
+	verifieNote(t, verifie(t, "1 gousse d'ail", "1 · gousse · d' · ail"), "")
+	verifieNote(t, verifie(t, "1 boîte de conserve de tomates",
+		"1 · boite · de · tomates"), "")
+	// « 796 ml » sans rien derrière est un aliment, pas une contenance.
+	verifie(t, "1 boîte de 796 ml", "1 · boite · de · 796 ml")
+
+	// La distinction lexicale n'est pas touchée : avec un partitif, le lexique
+	// ne prime toujours pas (cf. TestLexiqueAvecPartitifNePrimePas).
+	p := packFR(t)
+	lexique := Ensemble{p.Normalise("gousse de vanille"): true}
+	if avec := litAvec(t, "1 gousse de vanille", lexique); avec.UniteCle() != "gousse" ||
+		avec.Aliment != "vanille" {
+		t.Errorf("« 1 gousse de vanille » : %s", resume(avec))
 	}
 }
 
