@@ -382,3 +382,12 @@ func TestAdditionRefuseeQuandUnTermePorteUnAliment(t *testing.T) {
 		t.Errorf("note : %q, attendu %q", lu.Note, "pour dorer")
 	}
 }
+
+// L'autre moitié du garde-fou, celle que la passe de sabotage a trouvée
+// découverte : deux termes bien formés, mais d'unités différentes, ne
+// s'additionnent pas davantage. Sans la condition d'unité, « 250 g + 2
+// cuillères à soupe » rendrait 252 cuillères à soupe.
+func TestAdditionRefuseeQuandLesUnitesDifferent(t *testing.T) {
+	verifie(t, "250 g + 2 cuillères à soupe de crème fraîche",
+		"250 · gramme ·  · + 2 cuillères à soupe de crème fraîche")
+}
