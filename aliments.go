@@ -31,9 +31,22 @@ const (
 	CopyrightAliment = "Copyright (c) 2025 Rouzax"
 )
 
-// Lexique est un ensemble de formes normalisées, et rien de plus.
+// Entree est ce que le lexique connaît d'un aliment : sa forme canonique, son
+// pluriel, et la famille qu'il lui donne.
+//
+// Le pluriel voyage avec le nom parce qu'il ne se déduit pas — « cœurs
+// d'artichaut » met la marque sur le premier mot — et parce qu'un appelant qui
+// affiche « 2 oignon » a perdu au change ce qu'il gagnait à normaliser.
+type Entree struct {
+	Nom     string
+	Pluriel string
+	Label   string
+}
+
+// Lexique indexe chaque forme normalisée vers l'entrée qui la porte : le nom,
+// le pluriel et chacun des alias mènent à la même Entree.
 type Lexique struct {
-	formes  map[string]bool
+	formes  map[string]Entree
 	Entrees int
 }
 
@@ -42,7 +55,19 @@ func (l *Lexique) Contient(nom string) bool {
 	if l == nil {
 		return false
 	}
-	return l.formes[nom]
+	_, connue := l.formes[nom]
+	return connue
+}
+
+// Resout satisfait Resolveur : il dit vers quelle entrée une forme normalisée
+// se résout. C'est ce que `Contient` ne pouvait pas dire — il savait qu'une
+// forme était connue, pas ce qu'elle désignait.
+func (l *Lexique) Resout(nomNormalise string) (Entree, bool) {
+	if l == nil {
+		return Entree{}, false
+	}
+	entree, trouvee := l.formes[nomNormalise]
+	return entree, trouvee
 }
 
 // Formes rend le nombre d'écritures reconnues.
@@ -52,6 +77,25 @@ func (l *Lexique) Formes() int {
 	}
 	return len(l.formes)
 }
+
+// titreForme dit à quel titre une entrée revendique une forme. Deux entrées
+// peuvent revendiquer la même : le lexique embarqué n'en a aucun cas, mais rien
+// n'interdit à un appelant de fournir le sien.
+//
+// Tant que l'index ne portait qu'un booléen, la collision était sans
+// conséquence — « connue » reste « connue ». Maintenant qu'il porte l'entrée,
+// celle qui gagne emporte le nom canonique : le dernier écrit détournerait
+// « ail » vers « ail des ours » dès qu'une entrée tardive le déclare en alias.
+//
+// Une forme n'est donc reprise que par un titre strictement plus fort, et à
+// titre égal la première entrée lue la garde.
+type titreForme int
+
+const (
+	titreNom titreForme = iota
+	titrePluriel
+	titreAlias
+)
 
 type entreeAliment struct {
 	Nom     string   `json:"name"`
@@ -80,16 +124,28 @@ func LisAliments(contenu []byte, p *Pack) (*Lexique, error) {
 	if err := json.Unmarshal(contenu, &fichier); err != nil {
 		return nil, err
 	}
-	lexique := &Lexique{formes: map[string]bool{}, Entrees: len(fichier.Items)}
+	lexique := &Lexique{formes: map[string]Entree{}, Entrees: len(fichier.Items)}
+	titres := map[string]titreForme{}
 	for _, item := range fichier.Items {
 		// Le pluriel est retenu séparément et non déduit : « cœurs
 		// d'artichaut » met la marque sur le premier mot, pas sur le dernier,
 		// et aucune règle simple ne le devine.
-		formes := append([]string{item.Nom, item.Pluriel}, item.Alias...)
-		for _, brute := range formes {
-			if forme := p.Normalise(brute); forme != "" {
-				lexique.formes[forme] = true
+		entree := Entree{Nom: item.Nom, Pluriel: item.Pluriel, Label: item.Label}
+		poser := func(brute string, titre titreForme) {
+			forme := p.Normalise(brute)
+			if forme == "" {
+				return
 			}
+			if pris, deja := titres[forme]; deja && pris <= titre {
+				return
+			}
+			lexique.formes[forme] = entree
+			titres[forme] = titre
+		}
+		poser(item.Nom, titreNom)
+		poser(item.Pluriel, titrePluriel)
+		for _, alias := range item.Alias {
+			poser(alias, titreAlias)
 		}
 	}
 	return lexique, nil

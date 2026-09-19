@@ -42,6 +42,16 @@ type Aliments interface {
 	Contient(nomNormalise string) bool
 }
 
+// Resolveur est un lexique qui sait en plus vers quelle entrée une forme se
+// résout. C'est une interface à part, et non un élargissement d'Aliments,
+// parce que la segmentation n'a besoin que de l'appartenance : un appelant qui
+// fournit son propre lexique — ne serait-ce qu'un Ensemble — continue de
+// marcher sans rien résoudre, et `Lit` laisse alors l'aliment tel que la ligne
+// l'écrit.
+type Resolveur interface {
+	Resout(nomNormalise string) (Entree, bool)
+}
+
 // Ensemble est le lexique le plus simple qui soit.
 type Ensemble map[string]bool
 
@@ -78,9 +88,14 @@ type Ingredient struct {
 	UniteTexte    string
 	Qualificatifs []string
 	Partitif      string
-	Aliment       string
-	Note          string
-	Optionnel     bool
+	// Aliment porte la forme canonique de l'entrée du lexique quand la ligne
+	// s'y résout, et le texte de la ligne sinon. AlimentTexte porte toujours
+	// ce que la ligne écrit — c'est la segmentation, et c'est sur elle que se
+	// mesure l'accord.
+	Aliment      string
+	AlimentTexte string
+	Note         string
+	Optionnel    bool
 }
 
 // UniteCle rend la clé de l'unité, ou la chaîne vide s'il n'y en a pas.
@@ -757,7 +772,17 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	ligne.Qualificatifs = lu.qualificatifs
 	ligne.Partitif = lu.partitif
 	ligne.Aliment = lu.aliment
+	ligne.AlimentTexte = lu.aliment
 	ligne.Motif = lu.motif
+
+	// « 3 tomates » et « 1 tomate » désignent la même entrée : c'est ce que le
+	// lexique sait et que la ligne ne dit pas. Une forme qu'il ne connaît pas
+	// n'est pas réécrite — le parser ne devine pas de canonique.
+	if lexique, sait := aliments.(Resolveur); sait {
+		if entree, trouvee := lexique.Resout(p.Normalise(lu.aliment)); trouvee {
+			ligne.Aliment = entree.Nom
+		}
+	}
 
 	// « demi litre » : le multiplicateur décollé de l'unité divise la quantité.
 	if lu.facteur != 1.0 {

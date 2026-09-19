@@ -132,7 +132,12 @@ func egal(champ, brut string, lu *Ingredient, p *Pack, parFamille bool) bool {
 		return p.Normalise(brut) == p.Normalise(lu.Partitif)
 
 	default:
-		return p.Normalise(brut) == p.Normalise(lu.Aliment)
+		// Sur AlimentTexte, et non sur Aliment : l'annotateur écrit ce que la
+		// ligne écrit — « tomates », au pluriel —, et c'est la segmentation
+		// qu'on mesure, pas l'orthographe. La résolution vers l'entrée du
+		// lexique est étrangère à ce jugement ; la mesurer ici compterait
+		// fausse chaque ligne que le parser normalise correctement.
+		return p.Normalise(brut) == p.Normalise(lu.AlimentTexte)
 	}
 }
 
@@ -253,7 +258,7 @@ func Accord(lignes []LigneRef, p *Pack, lit func(string) *Ingredient) (float64, 
 		desaccords = append(desaccords, Desaccord{
 			Brut:    ligne.Brut,
 			Attendu: joint(ligne.Quantite, ligne.Unite, ligne.Partitif, ligne.Aliment),
-			Lu:      joint(TexteQuantite(lu.Quantite), lu.UniteCle(), lu.Partitif, lu.Aliment),
+			Lu:      joint(TexteQuantite(lu.Quantite), lu.UniteCle(), lu.Partitif, lu.AlimentTexte),
 		})
 	}
 	return float64(justes) / float64(len(lignes)), desaccords
