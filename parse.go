@@ -529,20 +529,37 @@ func ajouteNote(note, ajout string) string {
 	return note + " ; " + ajout
 }
 
+// contenancesMax plafonne l'imbrication des contenances, et c'est une borne de
+// coût autant qu'une borne de sens. Chaque niveau relance une lecture complète
+// de la fin de ligne, que litCorps paie déjà en rescannant tous les débuts de
+// mots : sans plafond, le coût de lecture est cubique en longueur de ligne. Or
+// rien ne borne cette longueur — les lignes viennent de sites tiers —, et une
+// seule ligne dégénérée figerait le lot entier.
+//
+// Deux niveaux : « 1 boîte de 4 sachets de 90 g de pépites » est le plus
+// profond que le corpus ait produit, et le jeu de référence n'en porte qu'un.
+const contenancesMax = 2
+
 // litContenance lit la contenance écrite entre un contenant et son aliment —
 // « 1 boîte de **796 ml** de tomates broyées ». Elle rend la mesure telle
-// qu'écrite et la lecture de ce qui la suit.
+// qu'écrite et la lecture de ce qui la suit. niveau est le nombre de
+// contenances déjà lues au-dessus d'elle.
 //
 // Les trois pièces sont exigées, et c'est ce qui borne la règle : une quantité,
 // son unité, et un aliment derrière. Sans la dernière, « 1 boîte de 796 ml »
 // perdrait son aliment — « une unité sans rien derrière est un aliment » reste
 // vrai ici.
-func litContenance(texte string, p *Pack, aliments Aliments) (mesure string, apres corps, ok bool) {
+func litContenance(texte string, p *Pack, aliments Aliments, niveau int) (mesure string, apres corps, ok bool) {
+	// Au-delà du plafond, la contenance n'est plus lue : elle reste dans
+	// l'aliment, exactement comme avant que la règle n'existe.
+	if niveau >= contenancesMax {
+		return "", corps{}, false
+	}
 	quantite, reste := litQuantite(texte, p)
 	if quantite.valeur == nil {
 		return "", corps{}, false
 	}
-	lu := litCorps(reste, p, true, aliments)
+	lu := litCorps(reste, p, true, aliments, niveau+1)
 	if lu.unite == nil || lu.aliment == "" {
 		return "", corps{}, false
 	}
@@ -593,7 +610,7 @@ func litMesureTerminale(texte string, p *Pack) (aliment, mesure string, ok bool)
 // aliments est le point d'accroche du lexique : « gousse de vanille », « noix
 // de muscade », « feuille de brick » sont des aliments dont le premier mot est
 // aussi une unité. Aucune grammaire ne peut les distinguer de « gousse d'ail ».
-func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps {
+func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments, niveau int) corps {
 	motifNu := "aliment_nu"
 	if avecQuantite {
 		motifNu = "quantite_aliment"
@@ -631,7 +648,7 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 			// retient que si elle trouve une unité : sans ce garde-fou,
 			// « 1/2 de citron » perdrait son partitif pour rien.
 			if reste != "" {
-				apres := litCorps(reste, p, avecQuantite, aliments)
+				apres := litCorps(reste, p, avecQuantite, aliments, niveau)
 				if apres.unite != nil {
 					return apres
 				}
@@ -661,7 +678,7 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 		// non l'aliment. Quantité et unité sont déjà prises par « 1 boîte », et
 		// le schéma n'en porte qu'un couple — la contenance part donc en note,
 		// où l'information survit et s'affiche derrière l'aliment.
-		if mesure, apres, ok := litContenance(suite, p, aliments); ok {
+		if mesure, apres, ok := litContenance(suite, p, aliments, niveau); ok {
 			resultat.aliment = apres.aliment
 			resultat.note = ajouteNote(mesure, apres.note)
 			resultat.motif = "quantite_unite_contenance"
@@ -793,7 +810,7 @@ func litAddition(texte string, p *Pack, aliments Aliments) (tete float64, dernie
 	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
 		return 0, "", false
 	}
-	lu := litCorps(reste, p, quantite.trouvee, aliments)
+	lu := litCorps(reste, p, quantite.trouvee, aliments, 0)
 	unite := ""
 	if lu.unite != nil {
 		unite = lu.unite.Cle
@@ -837,7 +854,7 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	ligne.Approximative = quantite.approximative
 	ligne.Indefinie = quantite.indefinie
 
-	lu := litCorps(reste, p, quantite.trouvee, aliments)
+	lu := litCorps(reste, p, quantite.trouvee, aliments, 0)
 	ligne.Unite = lu.unite
 	ligne.UniteTexte = lu.uniteTexte
 	ligne.Qualificatifs = lu.qualificatifs
