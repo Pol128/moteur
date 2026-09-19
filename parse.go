@@ -253,6 +253,45 @@ func Nettoie(brut string) string {
 	return strings.TrimSpace(texte)
 }
 
+// preparationFinale détache ce qui suit la dernière virgule quand c'est une
+// préparation — « 2 oignons, hachés finement ». C'est la règle des
+// parenthèses, étendue à l'écriture que 20 lignes du corpus emploient.
+//
+// La virgule ne peut pas suffire à déclencher : elle sépare tout aussi bien
+// deux aliments, et « Sel, poivre » perdrait son poivre. Ce qui tranche, c'est
+// que le segment soit fait des seules formes déclarées par le pack, dont au
+// moins une préparation : l'habillage (« finement ») n'est pas une préparation
+// à lui seul.
+func preparationFinale(texte string, p *Pack) (reste, note string) {
+	virgule := strings.LastIndex(texte, ",")
+	if virgule < 0 {
+		return texte, ""
+	}
+	segment := strings.TrimSpace(texte[virgule+1:])
+	// Une tête vide rendrait un aliment vide : « , hachés finement » vaut
+	// mieux lu tel quel. Un segment vide, lui, n'a aucune préparation et
+	// retombe sur le refus ci-dessous.
+	tete := strings.TrimSpace(texte[:virgule])
+	if tete == "" {
+		return texte, ""
+	}
+	preparation := false
+	for _, mot := range strings.Fields(segment) {
+		normalise := p.Normalise(mot)
+		if p.formesPreparation[normalise] {
+			preparation = true
+			continue
+		}
+		if !p.formesHabillage[normalise] {
+			return texte, ""
+		}
+	}
+	if !preparation {
+		return texte, ""
+	}
+	return tete, segment
+}
+
 // ExtraitNotes sort les parenthèses de la ligne : ce sont des notes, pas des
 // aliments. Marmiton balise d'ailleurs le complément à part (« (vieilles) »,
 // « (bio) »), ce qui confirme la lecture.
@@ -332,6 +371,15 @@ func ExtraitNotes(texte string, p *Pack) (reste, note string, optionnel bool) {
 				}
 				break
 			}
+		}
+	}
+
+	if sansNote, preparation := preparationFinale(reste, p); preparation != "" {
+		reste = sansNote
+		if note == "" {
+			note = preparation
+		} else {
+			note = note + " ; " + preparation
 		}
 	}
 	return reste, note, optionnel
@@ -961,6 +1009,15 @@ func (p *Pack) compileMotifs() {
 	if choix := alternative(p.MarquesPluriel); choix != "" {
 		p.motifMarquesPluriel = regexp.MustCompile(`(?i)(?:` + choix + `)`)
 	}
+	p.formesPreparation = map[string]bool{}
+	for _, forme := range p.Notes["preparations"] {
+		p.formesPreparation[p.Normalise(forme)] = true
+	}
+	p.formesHabillage = map[string]bool{}
+	for _, forme := range p.Notes["adverbes"] {
+		p.formesHabillage[p.Normalise(forme)] = true
+	}
+
 	p.motifAddition = nil
 	if choix := alternative(p.SeparateursAddition); choix != "" {
 		// Les séparateurs d'addition mesurés sont typographiques (« + ») : il
