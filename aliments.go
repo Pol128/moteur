@@ -31,9 +31,22 @@ const (
 	CopyrightAliment = "Copyright (c) 2025 Rouzax"
 )
 
-// Lexique est un ensemble de formes normalisées, et rien de plus.
+// Entree est ce que le lexique connaît d'un aliment : sa forme canonique, son
+// pluriel, et la famille qu'il lui donne.
+//
+// Le pluriel voyage avec le nom parce qu'il ne se déduit pas — « cœurs
+// d'artichaut » met la marque sur le premier mot — et parce qu'un appelant qui
+// affiche « 2 oignon » a perdu au change ce qu'il gagnait à normaliser.
+type Entree struct {
+	Nom     string
+	Pluriel string
+	Label   string
+}
+
+// Lexique indexe chaque forme normalisée vers l'entrée qui la porte : le nom,
+// le pluriel et chacun des alias mènent à la même Entree.
 type Lexique struct {
-	formes  map[string]bool
+	formes  map[string]Entree
 	Entrees int
 }
 
@@ -42,7 +55,19 @@ func (l *Lexique) Contient(nom string) bool {
 	if l == nil {
 		return false
 	}
-	return l.formes[nom]
+	_, connue := l.formes[nom]
+	return connue
+}
+
+// Resout satisfait Resolveur : il dit vers quelle entrée une forme normalisée
+// se résout. C'est ce que `Contient` ne pouvait pas dire — il savait qu'une
+// forme était connue, pas ce qu'elle désignait.
+func (l *Lexique) Resout(nomNormalise string) (Entree, bool) {
+	if l == nil {
+		return Entree{}, false
+	}
+	entree, trouvee := l.formes[nomNormalise]
+	return entree, trouvee
 }
 
 // Formes rend le nombre d'écritures reconnues.
@@ -80,15 +105,16 @@ func LisAliments(contenu []byte, p *Pack) (*Lexique, error) {
 	if err := json.Unmarshal(contenu, &fichier); err != nil {
 		return nil, err
 	}
-	lexique := &Lexique{formes: map[string]bool{}, Entrees: len(fichier.Items)}
+	lexique := &Lexique{formes: map[string]Entree{}, Entrees: len(fichier.Items)}
 	for _, item := range fichier.Items {
 		// Le pluriel est retenu séparément et non déduit : « cœurs
 		// d'artichaut » met la marque sur le premier mot, pas sur le dernier,
 		// et aucune règle simple ne le devine.
+		entree := Entree{Nom: item.Nom, Pluriel: item.Pluriel, Label: item.Label}
 		formes := append([]string{item.Nom, item.Pluriel}, item.Alias...)
 		for _, brute := range formes {
 			if forme := p.Normalise(brute); forme != "" {
-				lexique.formes[forme] = true
+				lexique.formes[forme] = entree
 			}
 		}
 	}

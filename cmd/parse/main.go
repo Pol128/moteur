@@ -290,7 +290,7 @@ func filtreCompare(p *moteur.Pack, aliments moteur.Aliments, interactif bool) in
 			bit(*strict["partitif"]),
 			bit(*strict["aliment"]),
 			bit(moteur.Span(p, attendu.Aliment, attendu.Note) ==
-				moteur.Span(p, lu.Aliment, lu.Note)),
+				moteur.Span(p, lu.AlimentTexte, lu.Note)),
 			"-",
 		}
 		if bloc != "" {
