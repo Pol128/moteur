@@ -442,3 +442,12 @@ func TestMotifInverseIgnoreLaLigneSansSeparateur(t *testing.T) {
 	verifieMotif(t, verifie(t, "500 g de beurre", "500 · gramme · de · beurre"),
 		"quantite_unite_partitif")
 }
+
+// Deux séparateurs sur la même ligne : c'est le dernier qui l'emporte, parce
+// que c'est lui qui isole une quantité. La gauche est rendue telle quelle —
+// la règle dit « la gauche est l'aliment », elle ne nettoie pas l'en-tête de
+// section qui s'y trouve.
+func TestMotifInverseRetientLeDernierSeparateur(t *testing.T) {
+	verifie(t, "Pour la sauce : Farine : 100 g",
+		"100 · gramme ·  · Pour la sauce : Farine")
+}
