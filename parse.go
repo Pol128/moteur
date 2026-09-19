@@ -844,8 +844,11 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	ligne.Partitif = lu.partitif
 	ligne.Aliment = lu.aliment
 	ligne.Motif = lu.motif
-	// La mesure sortie de l'aliment se lit avant les parenthèses dans la ligne :
-	// « 1 boîte de 796 ml (28 oz) » rend la note « 796 ml ; 28 oz ».
+	// La mesure sortie de l'aliment passe devant les notes parenthésées, où
+	// que la parenthèse soit écrite : la mesure qualifie l'aliment, la
+	// parenthèse le commente. « 1 boîte (bio) de 796 ml de tomates » rend donc
+	// « 796 ml ; bio », comme « 1 boîte de 796 ml (28 oz) » rend
+	// « 796 ml ; 28 oz ».
 	ligne.Note = ajouteNote(lu.note, note)
 
 	// « demi litre » : le multiplicateur décollé de l'unité divise la quantité.
