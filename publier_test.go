@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 const journalExemple = `# Journal des versions
@@ -86,7 +87,13 @@ func depotJetable(t *testing.T, journal string) string {
 		t.Fatalf("lecture du script publier : %v", err)
 	}
 
-	dir := t.TempDir()
+	// Le dépôt vit sous une racine : le leurre gh et le dépôt distant se
+	// posent à côté, jamais dedans — ils saliraient l'arbre de travail, et le
+	// script refuserait de partir pour cette raison-là plutôt que la bonne.
+	dir := filepath.Join(t.TempDir(), "depot")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	ecritJetable(t, dir, "publier", string(script))
 	if err := os.Chmod(filepath.Join(dir, "publier"), 0o755); err != nil {
 		t.Fatal(err)
@@ -124,6 +131,9 @@ func lancePublier(t *testing.T, dir string, args ...string) (string, int) {
 	t.Helper()
 	cmd := exec.Command("sh", append([]string{"./publier"}, args...)...)
 	cmd.Dir = dir
+	// Le leurre gh, quand un test en pose un, est cherché avant le vrai.
+	cmd.Env = append(os.Environ(),
+		"PATH="+filepath.Join(filepath.Dir(dir), "bin")+string(os.PathListSeparator)+os.Getenv("PATH"))
 	sortie, err := cmd.CombinedOutput()
 	if err == nil {
 		return string(sortie), 0
@@ -159,6 +169,43 @@ func exigeIntact(t *testing.T, dir string, avant etatPublie) {
 	}
 	if apres.journal != avant.journal {
 		t.Errorf("le journal a été réécrit malgré le refus :\n%s", apres.journal)
+	}
+}
+
+// moduleVert dépose dans le dépôt jetable un module d'un seul fichier, dont le
+// test passe : `go test ./...` se lance là et jamais dans ce dépôt-ci.
+func moduleVert(t *testing.T, dir string) {
+	t.Helper()
+	ecritJetable(t, dir, "go.mod", "module jetable.invalid\n\ngo 1.26.6\n")
+	ecritJetable(t, dir, "vert_test.go", "package jetable\n\nimport \"testing\"\n\nfunc TestVert(t *testing.T) {}\n")
+	gitJetable(t, dir, "add", "go.mod", "vert_test.go")
+	gitJetable(t, dir, "commit", "-q", "-m", "module jetable vert")
+}
+
+// distantJetable pose un dépôt nu à côté et le déclare en origin : la poussée
+// est réelle et vérifiable, et elle ne quitte pas le disque.
+func distantJetable(t *testing.T, dir string) string {
+	t.Helper()
+	distant := filepath.Join(filepath.Dir(dir), "distant.git")
+	cmd := exec.Command("git", "init", "-q", "--bare", "-b", "main", distant)
+	if sortie, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("dépôt distant jetable : %v\n%s", err, sortie)
+	}
+	gitJetable(t, dir, "remote", "add", "origin", distant)
+	return distant
+}
+
+// leurreGh remplace gh : le vrai joindrait le réseau. Celui-ci redit ce qu'il a
+// reçu, ce qui permet de vérifier les notes de la release sans en créer une.
+func leurreGh(t *testing.T, dir string) {
+	t.Helper()
+	binaires := filepath.Join(filepath.Dir(dir), "bin")
+	if err := os.Mkdir(binaires, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(binaires, "gh"),
+		[]byte("#!/bin/sh\necho \"leurre gh $*\"\ncat\n"), 0o755); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -264,5 +311,53 @@ func TestLeJournalPorteSesSections(t *testing.T) {
 		if !strings.Contains(string(journal), section+"\n") {
 			t.Errorf("section « %s » absente du journal", section)
 		}
+	}
+}
+
+func TestPublierDateLaSectionLaTagueEtLaPousse(t *testing.T) {
+	// Le seul test qui va jusqu'au bout. Il n'en reste rien dehors : la
+	// poussée va dans un dépôt nu du disque, et gh est un leurre.
+	dir := depotJetable(t, journalExemple)
+	moduleVert(t, dir)
+	distant := distantJetable(t, dir)
+	leurreGh(t, dir)
+
+	sortie, code := lancePublier(t, dir, "v0.3.0")
+	if code != 0 {
+		t.Fatalf("./publier a échoué (code %d)\n%s", code, sortie)
+	}
+
+	// Le journal : la section prend sa date, une « À paraître » vide reste
+	// au-dessus pour la suivante.
+	journal, err := os.ReadFile(filepath.Join(dir, "CHANGELOG.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	datee := "## À paraître\n\n## v0.3.0 — " + time.Now().Format("2006-01-02") + "\n"
+	if !strings.Contains(string(journal), datee) {
+		t.Errorf("journal sans « %s » :\n%s", strings.TrimSpace(datee), journal)
+	}
+	if !strings.Contains(string(journal), "### Lecture\n- une règle de lecture nouvelle") {
+		t.Errorf("le contenu de « À paraître » n'a pas suivi sous la version :\n%s", journal)
+	}
+
+	// Le tag annoté porte la section entière, en-têtes markdown compris : git
+	// retire par défaut les lignes qui commencent par « # », et un journal qui
+	// se relit depuis ses tags y perdrait ses sous-titres.
+	corps := gitJetable(t, dir, "tag", "-l", "v0.3.0", "--format=%(contents)")
+	if !strings.Contains(corps, "### Lecture") || !strings.Contains(corps, "- une règle de lecture nouvelle") {
+		t.Errorf("le tag ne porte pas la section :\n%s", corps)
+	}
+
+	// La branche et le tag sont poussés, et gh a reçu les mêmes notes.
+	refs := gitJetable(t, dir, "ls-remote", distant)
+	if !strings.Contains(refs, "refs/heads/main") || !strings.Contains(refs, "refs/tags/v0.3.0") {
+		t.Errorf("branche ou tag non poussés :\n%s", refs)
+	}
+	if !strings.Contains(sortie, "leurre gh release create v0.3.0") {
+		t.Errorf("gh release create n'a pas été appelé :\n%s", sortie)
+	}
+	if !strings.Contains(sortie, "### Lecture") {
+		t.Errorf("les notes de la release ne portent pas la section :\n%s", sortie)
 	}
 }
