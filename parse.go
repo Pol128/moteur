@@ -666,19 +666,14 @@ type terme struct {
 // l'aliment *gramme* et aucune unité. C'est une règle du parser, pas un
 // accident — le terme se lit donc par le pack directement.
 func litTerme(texte string, p *Pack) (terme, bool) {
-	quantite, reste := litQuantite(texte, p)
+	quantite, lue, ok := litQuantiteSeule(texte, p)
 	// Un intervalle — « 2 à 3 g + 100 g » — n'a pas de somme évidente : on
 	// rend la main plutôt que de trancher.
-	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
+	if !ok || quantite.maximum != nil {
 		return terme{}, false
 	}
-	reste = strings.TrimSpace(reste)
-	if reste == "" {
-		return terme{valeur: *quantite.valeur}, true
-	}
-	lue := p.LireUnite(reste)
 	if lue == nil {
-		return terme{}, false
+		return terme{valeur: *quantite.valeur}, true
 	}
 	return terme{valeur: *quantite.valeur * lue.Facteur, unite: lue.Unite.Cle}, true
 }
