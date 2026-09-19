@@ -96,13 +96,24 @@ grossit.
 ## Mesure
 
 ```sh
-go test ./...                       # 43 tests
+go test ./...                       # 75 tests
 ```
 
 `TestJeuDeReference` fait tourner le parser sur `testdata/fr.txt`, 287 lignes
 annotées à la main, tirées d'un corpus réel — fautes de frappe comprises. Le
 plancher d'accord est inscrit dans le fichier lui-même : il ne peut pas baisser
 sans que quelqu'un le change explicitement.
+
+Le plancher dit **combien** de lignes sont fausses ; `testdata/desaccords.txt`
+dit **lesquelles**. Sans lui, une modification qui en corrige cinq et en casse
+cinq autres laisserait le taux identique et le test vert. Le test compare les
+deux listes avec multiplicité et échoue dans les deux sens — une ligne qui se
+met à échouer, et une ligne qui cesse d'échouer sans que le fichier ait suivi.
+Après toute évolution du parser, le régénérer et relire le diff :
+
+```sh
+go run ./cmd/parse --jeu testdata/fr.txt --desaccords testdata/desaccords.txt
+```
 
 Ce qu'il mesure est la **segmentation**, pas la résolution : la comparaison
 porte sur `AlimentTexte`, ce que la ligne écrit et ce que l'annotateur a relu.

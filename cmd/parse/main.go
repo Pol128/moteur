@@ -77,6 +77,8 @@ func main() {
 		"comme --filtre, mais chaque ligne d'entrée porte aussi ce qui était "+
 			"attendu, et la sortie porte le verdict")
 	jeu := flag.String("jeu", "", "mesurer l'accord contre un jeu de référence")
+	sortieDesaccords := flag.String("desaccords", "",
+		"conjoint à --jeu : épingler dans ce fichier les lignes en désaccord")
 	service := flag.Bool("service", false,
 		"répondre aux questions qu'on pose au pack : normalise, unite, partitif, quantite")
 	infos := flag.Bool("infos", false, "décrire le pack chargé, en JSON")
@@ -98,7 +100,7 @@ func main() {
 	case *service:
 		os.Exit(serviceDuPack(p, *interactif))
 	case *jeu != "":
-		os.Exit(mesureJeu(*jeu, p, aliments))
+		os.Exit(mesureJeu(*jeu, p, aliments, *sortieDesaccords))
 	case *compare:
 		os.Exit(filtreCompare(p, aliments, *interactif))
 	case *filtre:
@@ -408,7 +410,10 @@ func decritPack(p *moteur.Pack) int {
 
 // ------------------------------------------------------------------------ jeu
 
-func mesureJeu(chemin string, p *moteur.Pack, aliments moteur.Aliments) int {
+// mesureJeu affiche l'accord, et épingle au passage les lignes en désaccord si
+// on lui donne où les écrire. Le fichier ne change rien au verdict : le
+// plancher en reste seul maître, et le code de sortie avec lui.
+func mesureJeu(chemin string, p *moteur.Pack, aliments moteur.Aliments, sortieDesaccords string) int {
 	contenu, err := os.ReadFile(chemin)
 	if err != nil {
 		echoue(err)
@@ -421,6 +426,12 @@ func mesureJeu(chemin string, p *moteur.Pack, aliments moteur.Aliments) int {
 		part*100, len(lignes), plancher*100)
 	for _, d := range desaccords {
 		fmt.Printf("\n  %s\n    attendu  %s\n    lu       %s\n", d.Brut, d.Attendu, d.Lu)
+	}
+	if sortieDesaccords != "" {
+		contenu := []byte(moteur.TexteDesaccords(desaccords))
+		if err := os.WriteFile(sortieDesaccords, contenu, 0o644); err != nil {
+			echoue(err)
+		}
 	}
 	if part+1e-9 < plancher {
 		return 1

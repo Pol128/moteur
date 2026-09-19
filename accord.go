@@ -13,8 +13,11 @@ package moteur
 // qu'il tient le plancher du jeu de référence.
 
 import (
+	"fmt"
 	"math"
+	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -338,4 +341,108 @@ func Resolution(lignes []LigneRef, p *Pack, lexique Resolveur) (float64, []strin
 		return 0, nil
 	}
 	return float64(resolues) / float64(occurrences), inconnues
+}
+
+// --------------------------------------- les désaccords épinglés
+
+// CommandeDesaccords régénère le fichier épinglé. Elle vit ici parce qu'elle
+// est écrite à trois endroits — l'entête du fichier, le message d'erreur du
+// test, le README — et qu'une commande recopiée trois fois finit par diverger.
+//
+// Le lexique embarqué par défaut est ce qui rend la commande et le test
+// d'accord : « --aliments "" » produirait un autre ensemble.
+const CommandeDesaccords = "go run ./cmd/parse --jeu testdata/fr.txt --desaccords testdata/desaccords.txt"
+
+const enteteDesaccords = `# Les lignes de testdata/fr.txt que le parser ne lit pas comme l'annotateur.
+#
+# Le plancher d'accord dit combien de lignes sont fausses ; ce fichier dit
+# lesquelles. Sans lui, une modification qui en corrige cinq et en casse cinq
+# autres laisse le taux identique et le test vert.
+#
+# Une valeur brute par ligne, doublons compris — « brut » n'est pas une clé
+# unique —, triée par ordre d'octets. Les lignes # et les lignes vides sont
+# ignorées, comme dans fr.txt. Ne pas retoucher à la main : régénérer.
+#
+#   ` + CommandeDesaccords + `
+`
+
+// AnalyseDesaccords relit le fichier épinglé : une valeur brute par ligne, les
+// lignes de commentaire et les lignes vides en moins. L'ordre du fichier est
+// rendu tel quel — c'est la comparaison qui trie.
+func AnalyseDesaccords(texte string) []string {
+	var bruts []string
+	for _, ligne := range strings.Split(texte, "\n") {
+		if strings.HasPrefix(ligne, "#") || strings.TrimSpace(ligne) == "" {
+			continue
+		}
+		bruts = append(bruts, ligne)
+	}
+	return bruts
+}
+
+// ChargeDesaccords lit le fichier épinglé. Absent, il dit quoi lancer pour le
+// produire : un garde-fou qui disparaît avec son fichier ne garde rien.
+func ChargeDesaccords(chemin string) ([]string, error) {
+	contenu, err := os.ReadFile(chemin)
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s absent — le régénérer :\n  %s", chemin, CommandeDesaccords)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return AnalyseDesaccords(string(contenu)), nil
+}
+
+// BrutsDesaccords ne garde des désaccords que ce que le fichier épingle : la
+// ligne telle que le corpus l'écrit.
+func BrutsDesaccords(desaccords []Desaccord) []string {
+	bruts := make([]string, 0, len(desaccords))
+	for _, d := range desaccords {
+		bruts = append(bruts, d.Brut)
+	}
+	return bruts
+}
+
+// CompareDesaccords confronte la liste épinglée à celle du jour, et rend ce qui
+// est apparu et ce qui a disparu.
+//
+// La comparaison est **multiple** : les deux listes sont triées et parcourues
+// terme à terme, sans dédoublonner. « 140 g de farine type 55 » est en
+// désaccord trois fois dans le jeu ; un ensemble qui l'y compterait une seule
+// laisserait passer une régression qui en corrige deux sur trois.
+//
+// Elle échoue dans les deux sens, et le second n'est pas de la sévérité
+// gratuite : un fichier de manquements connus qu'on ne met jamais à jour
+// redevient du bruit en trois mois.
+func CompareDesaccords(epingles, constates []string) (apparus, disparus []string) {
+	attendus := append([]string(nil), epingles...)
+	obtenus := append([]string(nil), constates...)
+	sort.Strings(attendus)
+	sort.Strings(obtenus)
+
+	i, j := 0, 0
+	for i < len(attendus) && j < len(obtenus) {
+		switch {
+		case attendus[i] == obtenus[j]:
+			i, j = i+1, j+1
+		case attendus[i] < obtenus[j]:
+			disparus = append(disparus, attendus[i])
+			i++
+		default:
+			apparus = append(apparus, obtenus[j])
+			j++
+		}
+	}
+	disparus = append(disparus, attendus[i:]...)
+	apparus = append(apparus, obtenus[j:]...)
+	return apparus, disparus
+}
+
+// TexteDesaccords rend le contenu du fichier épinglé : l'entête, puis les
+// lignes triées, doublons compris. Régénérer deux fois de suite ne change rien
+// au fichier.
+func TexteDesaccords(desaccords []Desaccord) string {
+	bruts := BrutsDesaccords(desaccords)
+	sort.Strings(bruts)
+	return enteteDesaccords + "\n" + strings.Join(bruts, "\n") + "\n"
 }
