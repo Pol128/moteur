@@ -172,10 +172,16 @@ func tronque(texte string, taille int) string {
 // colonnes du mode filtre, dans cet ordre. Le texte brut n'y figure pas : il
 // pourrait contenir une tabulation, et l'appelant connaît l'ordre de ses
 // propres lignes.
+//
+// `aliment` porte la forme canonique de l'entrée du lexique, `aliment_texte`
+// ce que la ligne écrit. Les deux voyagent parce que `--compare` juge
+// `egal_aliment` et `meme_span` sur le second : sans lui, une ligne dirait
+// `aliment=tomate, egal_aliment=1` face à un `tomates` annoté, et rien n'y
+// permettrait de retrouver la valeur réellement comparée.
 var colonnes = []string{
 	"motif", "quantite", "quantite_max", "quantite_texte", "unite", "unite_texte",
-	"partitif", "aliment", "note", "qualificatifs", "optionnel", "approximative",
-	"indefinie",
+	"partitif", "aliment", "aliment_texte", "note", "qualificatifs", "optionnel",
+	"approximative", "indefinie",
 }
 
 // filtreEntree lit stdin ligne à ligne et rend un TSV, une ligne de sortie par
@@ -212,6 +218,7 @@ func champsLus(lu *moteur.Ingredient) []string {
 		lu.UniteTexte,
 		lu.Partitif,
 		lu.Aliment,
+		lu.AlimentTexte,
 		lu.Note,
 		strings.Join(lu.Qualificatifs, "|"),
 		bit(lu.Optionnel),
@@ -290,7 +297,7 @@ func filtreCompare(p *moteur.Pack, aliments moteur.Aliments, interactif bool) in
 			bit(*strict["partitif"]),
 			bit(*strict["aliment"]),
 			bit(moteur.Span(p, attendu.Aliment, attendu.Note) ==
-				moteur.Span(p, lu.Aliment, lu.Note)),
+				moteur.Span(p, lu.AlimentTexte, lu.Note)),
 			"-",
 		}
 		if bloc != "" {

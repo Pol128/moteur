@@ -99,6 +99,11 @@ type Pack struct {
 	motifMarquesPluriel *regexp.Regexp
 	motifAddition       *regexp.Regexp
 	motifInverse        *regexp.Regexp
+
+	// Les formes qui autorisent à détacher ce qui suit une virgule finale,
+	// préparations et habillage confondus : voir preparationFinale.
+	formesPreparation map[string]bool
+	formesHabillage   map[string]bool
 }
 
 // NombreDeFormes rend le nombre d'écritures d'unité reconnues, toutes unités

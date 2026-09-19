@@ -42,6 +42,16 @@ type Aliments interface {
 	Contient(nomNormalise string) bool
 }
 
+// Resolveur est un lexique qui sait en plus vers quelle entrée une forme se
+// résout. C'est une interface à part, et non un élargissement d'Aliments,
+// parce que la segmentation n'a besoin que de l'appartenance : un appelant qui
+// fournit son propre lexique — ne serait-ce qu'un Ensemble — continue de
+// marcher sans rien résoudre, et `Lit` laisse alors l'aliment tel que la ligne
+// l'écrit.
+type Resolveur interface {
+	Resout(nomNormalise string) (Entree, bool)
+}
+
 // Ensemble est le lexique le plus simple qui soit.
 type Ensemble map[string]bool
 
@@ -78,9 +88,14 @@ type Ingredient struct {
 	UniteTexte    string
 	Qualificatifs []string
 	Partitif      string
-	Aliment       string
-	Note          string
-	Optionnel     bool
+	// Aliment porte la forme canonique de l'entrée du lexique quand la ligne
+	// s'y résout, et le texte de la ligne sinon. AlimentTexte porte toujours
+	// ce que la ligne écrit — c'est la segmentation, et c'est sur elle que se
+	// mesure l'accord.
+	Aliment      string
+	AlimentTexte string
+	Note         string
+	Optionnel    bool
 }
 
 // UniteCle rend la clé de l'unité, ou la chaîne vide s'il n'y en a pas.
@@ -238,6 +253,45 @@ func Nettoie(brut string) string {
 	return strings.TrimSpace(texte)
 }
 
+// preparationFinale détache ce qui suit la dernière virgule quand c'est une
+// préparation — « 2 oignons, hachés finement ». C'est la règle des
+// parenthèses, étendue à l'écriture que 20 lignes du corpus emploient.
+//
+// La virgule ne peut pas suffire à déclencher : elle sépare tout aussi bien
+// deux aliments, et « Sel, poivre » perdrait son poivre. Ce qui tranche, c'est
+// que le segment soit fait des seules formes déclarées par le pack, dont au
+// moins une préparation : l'habillage (« finement ») n'est pas une préparation
+// à lui seul.
+func preparationFinale(texte string, p *Pack) (reste, note string) {
+	virgule := strings.LastIndex(texte, ",")
+	if virgule < 0 {
+		return texte, ""
+	}
+	segment := strings.TrimSpace(texte[virgule+1:])
+	// Une tête vide rendrait un aliment vide : « , hachés finement » vaut
+	// mieux lu tel quel. Un segment vide, lui, n'a aucune préparation et
+	// retombe sur le refus ci-dessous.
+	tete := strings.TrimSpace(texte[:virgule])
+	if tete == "" {
+		return texte, ""
+	}
+	preparation := false
+	for _, mot := range strings.Fields(segment) {
+		normalise := p.Normalise(mot)
+		if p.formesPreparation[normalise] {
+			preparation = true
+			continue
+		}
+		if !p.formesHabillage[normalise] {
+			return texte, ""
+		}
+	}
+	if !preparation {
+		return texte, ""
+	}
+	return tete, segment
+}
+
 // ExtraitNotes sort les parenthèses de la ligne : ce sont des notes, pas des
 // aliments. Marmiton balise d'ailleurs le complément à part (« (vieilles) »,
 // « (bio) »), ce qui confirme la lecture.
@@ -317,6 +371,15 @@ func ExtraitNotes(texte string, p *Pack) (reste, note string, optionnel bool) {
 				}
 				break
 			}
+		}
+	}
+
+	if sansNote, preparation := preparationFinale(reste, p); preparation != "" {
+		reste = sansNote
+		if note == "" {
+			note = preparation
+		} else {
+			note = note + " ; " + preparation
 		}
 	}
 	return reste, note, optionnel
@@ -513,7 +576,91 @@ type corps struct {
 	uniteTexte    string
 	partitif      string
 	aliment       string
+	note          string
 	motif         string
+}
+
+// ajouteNote enfile une note derrière une autre, avec le séparateur
+// qu'`ExtraitNotes` emploie déjà entre deux parenthèses.
+func ajouteNote(note, ajout string) string {
+	if note == "" {
+		return ajout
+	}
+	if ajout == "" {
+		return note
+	}
+	return note + " ; " + ajout
+}
+
+// contenancesMax plafonne l'imbrication des contenances, et c'est une borne de
+// coût autant qu'une borne de sens. Chaque niveau relance une lecture complète
+// de la fin de ligne, que litCorps paie déjà en rescannant tous les débuts de
+// mots : sans plafond, le coût de lecture est cubique en longueur de ligne. Or
+// rien ne borne cette longueur — les lignes viennent de sites tiers —, et une
+// seule ligne dégénérée figerait le lot entier.
+//
+// Deux niveaux : « 1 boîte de 4 sachets de 90 g de pépites » est le plus
+// profond que le corpus ait produit, et le jeu de référence n'en porte qu'un.
+const contenancesMax = 2
+
+// litContenance lit la contenance écrite entre un contenant et son aliment —
+// « 1 boîte de **796 ml** de tomates broyées ». Elle rend la mesure telle
+// qu'écrite et la lecture de ce qui la suit. niveau est le nombre de
+// contenances déjà lues au-dessus d'elle.
+//
+// Les trois pièces sont exigées, et c'est ce qui borne la règle : une quantité,
+// son unité, et un aliment derrière. Sans la dernière, « 1 boîte de 796 ml »
+// perdrait son aliment — « une unité sans rien derrière est un aliment » reste
+// vrai ici.
+func litContenance(texte string, p *Pack, aliments Aliments, niveau int) (mesure string, apres corps, ok bool) {
+	// Au-delà du plafond, la contenance n'est plus lue : elle reste dans
+	// l'aliment, exactement comme avant que la règle n'existe.
+	if niveau >= contenancesMax {
+		return "", corps{}, false
+	}
+	quantite, reste := litQuantite(texte, p)
+	if quantite.valeur == nil {
+		return "", corps{}, false
+	}
+	lu := litCorps(reste, p, true, aliments, niveau+1)
+	if lu.unite == nil || lu.aliment == "" {
+		return "", corps{}, false
+	}
+	return strings.TrimSpace(quantite.texte + " " + lu.uniteTexte), lu, true
+}
+
+// litMesureTerminale reconnaît la même mesure écrite derrière l'aliment —
+// « 1 gigot d'agneau **de 2,5 kg** » —, la variante à poids terminal du motif.
+//
+// Le partitif doit être suivi d'une quantité et d'une unité, et de rien d'autre :
+// la lecture se fait par le pack directement, comme pour un terme d'addition.
+// Passer par litCorps ne marcherait pas — « 2,5 kg » lu seul rend l'aliment
+// *kg*. Et il faut un aliment devant, sinon il ne resterait rien à nommer.
+func litMesureTerminale(texte string, p *Pack) (aliment, mesure string, ok bool) {
+	for _, debut := range debutsDeMots(texte) {
+		forme := PartitifA(p, texte, debut)
+		if forme == "" {
+			continue
+		}
+		// L'espace qui suit le partitif est encore là, et une quantité ne se lit
+		// qu'ancrée : « de 2,5 kg » ne rendrait rien sans ce coup de ciseaux.
+		quantite, reste := litQuantite(strings.TrimSpace(texte[debut+len(forme):]), p)
+		if quantite.valeur == nil {
+			continue
+		}
+		reste = strings.Trim(reste, finUnite)
+		if p.LireUnite(reste) == nil {
+			continue
+		}
+		// « , de 2 kg » : l'aliment est déjà rogné de sa ponctuation, donc ce
+		// partitif-là est en tête et il ne reste rien à nommer devant lui.
+		devant := strings.Trim(texte[:debut], finPonctuation)
+		if devant == "" {
+			continue
+		}
+		return devant, strings.TrimSpace(quantite.texte + " " + reste), true
+	}
+	return "", "", false
 }
 
 // litCorps lit unité, partitif et aliment : les deux marqueurs de frontière à
@@ -526,7 +673,7 @@ type corps struct {
 // aliments est le point d'accroche du lexique : « gousse de vanille », « noix
 // de muscade », « feuille de brick » sont des aliments dont le premier mot est
 // aussi une unité. Aucune grammaire ne peut les distinguer de « gousse d'ail ».
-func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps {
+func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments, niveau int) corps {
 	motifNu := "aliment_nu"
 	if avecQuantite {
 		motifNu = "quantite_aliment"
@@ -564,7 +711,7 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 			// retient que si elle trouve une unité : sans ce garde-fou,
 			// « 1/2 de citron » perdrait son partitif pour rien.
 			if reste != "" {
-				apres := litCorps(reste, p, avecQuantite, aliments)
+				apres := litCorps(reste, p, avecQuantite, aliments, niveau)
 				if apres.unite != nil {
 					return apres
 				}
@@ -589,8 +736,18 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 		resultat.qualificatifs = meilleureUnite.Qualificatifs
 		resultat.uniteTexte = strings.TrimSpace(texte[:meilleurDebut])
 		resultat.partitif = meilleureForme
-		resultat.aliment = sansPartitifInitial(
-			p, strings.Trim(texte[meilleurDebut+len(meilleureForme):], finPonctuation))
+		suite := strings.Trim(texte[meilleurDebut+len(meilleureForme):], finPonctuation)
+		// Le contenant est retenu : ce qui le suit peut être sa contenance, et
+		// non l'aliment. Quantité et unité sont déjà prises par « 1 boîte », et
+		// le schéma n'en porte qu'un couple — la contenance part donc en note,
+		// où l'information survit et s'affiche derrière l'aliment.
+		if mesure, apres, ok := litContenance(suite, p, aliments, niveau); ok {
+			resultat.aliment = apres.aliment
+			resultat.note = ajouteNote(mesure, apres.note)
+			resultat.motif = "quantite_unite_contenance"
+			return resultat
+		}
+		resultat.aliment = sansPartitifInitial(p, suite)
 		resultat.motif = "quantite_unite_partitif"
 		return resultat
 	}
@@ -644,6 +801,15 @@ func litCorps(texte string, p *Pack, avecQuantite bool, aliments Aliments) corps
 			resultat.motif = "quantite_unite_aliment"
 			return resultat
 		}
+	}
+
+	// -- rien n'a été retenu comme unité : la mesure est peut-être écrite
+	// derrière l'aliment, « 1 gigot d'agneau de 2,5 kg ». En dernier recours,
+	// pour ne pas prendre le pas sur une unité placée devant.
+	if aliment, mesure, ok := litMesureTerminale(resultat.aliment, p); ok {
+		resultat.aliment = aliment
+		resultat.note = mesure
+		resultat.motif = "aliment_mesure_terminale"
 	}
 	return resultat
 }
@@ -702,7 +868,7 @@ func litAddition(texte string, p *Pack, aliments Aliments) (tete float64, dernie
 	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
 		return 0, "", false
 	}
-	lu := litCorps(reste, p, quantite.trouvee, aliments)
+	lu := litCorps(reste, p, quantite.trouvee, aliments, 0)
 	unite := ""
 	if lu.unite != nil {
 		unite = lu.unite.Cle
@@ -797,7 +963,7 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	}
 
 	texte, note, optionnel := ExtraitNotes(texte, p)
-	ligne.Note, ligne.Optionnel = note, optionnel
+	ligne.Optionnel = optionnel
 
 	// « Aubergines : 500 g » : la quantité est écrite après l'aliment. La
 	// ligne se lit alors sur sa droite seule, et sa gauche est l'aliment.
@@ -825,7 +991,7 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	// aliment faute d'avoir quoi que ce soit derrière.
 	lu := corps{facteur: 1.0, aliment: inverse.aliment, motif: "aliment_quantite"}
 	if !inversee {
-		lu = litCorps(reste, p, quantite.trouvee, aliments)
+		lu = litCorps(reste, p, quantite.trouvee, aliments, 0)
 	} else if u := inverse.unite; u != nil {
 		lu.unite, lu.facteur = u.Unite, u.Facteur
 		lu.qualificatifs, lu.uniteTexte = u.Qualificatifs, strings.TrimSpace(reste)
@@ -835,7 +1001,23 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	ligne.Qualificatifs = lu.qualificatifs
 	ligne.Partitif = lu.partitif
 	ligne.Aliment = lu.aliment
+	ligne.AlimentTexte = lu.aliment
 	ligne.Motif = lu.motif
+	// La mesure sortie de l'aliment passe devant les notes parenthésées, où
+	// que la parenthèse soit écrite : la mesure qualifie l'aliment, la
+	// parenthèse le commente. « 1 boîte (bio) de 796 ml de tomates » rend donc
+	// « 796 ml ; bio », comme « 1 boîte de 796 ml (28 oz) » rend
+	// « 796 ml ; 28 oz ».
+	ligne.Note = ajouteNote(lu.note, note)
+
+	// « 3 tomates » et « 1 tomate » désignent la même entrée : c'est ce que le
+	// lexique sait et que la ligne ne dit pas. Une forme qu'il ne connaît pas
+	// n'est pas réécrite — le parser ne devine pas de canonique.
+	if lexique, sait := aliments.(Resolveur); sait {
+		if entree, trouvee := lexique.Resout(p.Normalise(lu.aliment)); trouvee {
+			ligne.Aliment = entree.Nom
+		}
+	}
 
 	// « demi litre » : le multiplicateur décollé de l'unité divise la quantité.
 	if lu.facteur != 1.0 {
@@ -911,6 +1093,16 @@ func (p *Pack) compileMotifs() {
 		// de mot à défendre.
 		p.motifInverse = regexp.MustCompile(`\s*(?:` + choix + `)\s*`)
 	}
+
+	p.formesPreparation = map[string]bool{}
+	for _, forme := range p.Notes["preparations"] {
+		p.formesPreparation[p.Normalise(forme)] = true
+	}
+	p.formesHabillage = map[string]bool{}
+	for _, forme := range p.Notes["adverbes"] {
+		p.formesHabillage[p.Normalise(forme)] = true
+	}
+
 	p.motifAddition = nil
 	if choix := alternative(p.SeparateursAddition); choix != "" {
 		// Les séparateurs d'addition mesurés sont typographiques (« + ») : il

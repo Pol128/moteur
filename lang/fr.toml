@@ -188,6 +188,29 @@ approximation = ["environ", "à peu près"]
 # 3 824 lignes contiennent « ou » : « sirop d'agave (ou sucre) ». L'alternative
 # appartient à la note, elle ne crée pas une seconde ligne d'ingrédient.
 alternatives = ["ou", "ou bien", "à défaut", "de préférence"]
+# 20 lignes écrivent la préparation après une virgule finale : « oignon, haché
+# finement ». C'est une note, comme la parenthèse — sauf qu'une virgule n'est
+# pas un délimiteur : elle sépare aussi bien deux aliments (« Sel, poivre »),
+# et la ponctuation seule ne les distingue pas. Cette liste le fait : la note ne
+# se détache que si tout ce qui suit la virgule en est fait.
+#
+# Le même participe sans ponctuation reste à l'aliment — « gruyère râpé »,
+# « beurre fondu ». Aucune règle mécanique ne l'y distingue de « crème fraîche
+# liquide », qui est juste : c'est du lexique, pas de la grammaire.
+preparations = [
+  "haché", "hachée", "hachés", "hachées",
+  "déchiré", "déchirée", "déchirés", "déchirées",
+  "épépiné", "épépinée", "épépinés", "épépinées",
+  "émincé", "émincée", "émincés", "émincées",
+  "fondu", "fondue", "fondus", "fondues",
+  "râpé", "râpée", "râpés", "râpées",
+  "coupé", "coupée", "coupés", "coupées",
+  "pelé", "pelée", "pelés", "pelées",
+]
+# Ce qui habille une préparation sans en être une. Un segment qui n'en contient
+# que ça n'est pas une préparation pour autant : il faut au moins une forme
+# ci-dessus.
+adverbes = ["finement"]
 
 
 # ---------------------------------------------------------------------------

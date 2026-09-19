@@ -22,6 +22,41 @@ Pour un pack à soi — une autre langue, une variante locale du lexique —
 `Charge` et `ChargeAliments` lisent depuis des fichiers, `Lis` et `LisAliments`
 depuis des octets.
 
+## La forme canonique de l'aliment
+
+Le lexique n'est pas qu'une liste de formes connues : il indexe chacune d'elles
+— le nom, le pluriel, chaque alias — vers l'entrée qui la porte. `Lit` s'en
+sert pour poser dans `Aliment` la forme canonique de cette entrée, quand la
+ligne s'y résout :
+
+```go
+pack, lexique, err := moteur.FR()
+moteur.Lit("3 tomates", pack, lexique).Aliment      // « tomate »
+moteur.Lit("1 oignon brun", pack, lexique).Aliment  // « oignon jaune » — alias déclaré
+moteur.Lit("2 oignons", pack, lexique).Aliment      // « oignons » — pas d'entrée « oignon »
+```
+
+C'est ce qui permet de rapprocher « 2 oignons » et « 3 oignon » : liste de
+courses, variation du nombre de parts, calcul des calories, recherche de
+recettes à partir de ce qu'on a — toutes supposent que les deux désignent la
+même entrée.
+
+Une forme que le lexique ne connaît pas n'est **jamais** réécrite : le parser
+ne devine pas de canonique. Et ce que la ligne écrivait reste dans
+`AlimentTexte`, résolution ou pas. `Brut`, lui, ne bouge jamais.
+
+Pour accorder l'aliment à l'affichage, l'entrée se relit en entier — elle porte
+le pluriel, qui ne se déduit pas :
+
+```go
+entree, connue := lexique.Resout(pack.Normalise("tomates"))
+// entree.Nom = "tomate"   entree.Pluriel = "tomates"   entree.Label = "Légumes"
+```
+
+`Contient` répond comme avant, et l'interface `Aliments` que consomme le parser
+ne bouge pas : un lexique à soi qui ne sait dire que l'appartenance continue de
+marcher, et `Lit` laisse alors l'aliment tel que la ligne l'écrit.
+
 ## Ce module est la seule implémentation du parser
 
 Il a existé une seconde implémentation, en Python, dans la forge privée qui
@@ -61,13 +96,17 @@ grossit.
 ## Mesure
 
 ```sh
-go test ./...                       # 38 tests
+go test ./...                       # 43 tests
 ```
 
 `TestJeuDeReference` fait tourner le parser sur `testdata/fr.txt`, 287 lignes
 annotées à la main, tirées d'un corpus réel — fautes de frappe comprises. Le
 plancher d'accord est inscrit dans le fichier lui-même : il ne peut pas baisser
 sans que quelqu'un le change explicitement.
+
+Ce qu'il mesure est la **segmentation**, pas la résolution : la comparaison
+porte sur `AlimentTexte`, ce que la ligne écrit et ce que l'annotateur a relu.
+La forme canonique se vérifie ailleurs, sur les entrées du lexique.
 
 ## En ligne de commande
 
