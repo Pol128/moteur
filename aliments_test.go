@@ -72,10 +72,6 @@ func TestLitPoseLaFormeCanonique(t *testing.T) {
 	for _, cas := range []struct{ ligne, aliment, pourquoi string }{
 		{"3 tomates", "tomate", "le pluriel de l'entrée « tomate »"},
 		{"1 oignon brun", "oignon jaune", "un alias déclaré d'« oignon jaune »"},
-		// Le lexique embarqué ne porte pas d'entrée « oignon » : une forme qui
-		// ne se résout pas n'est pas réécrite. C'est la tâche de complétion du
-		// référentiel qui comble ce manque, pas celle-ci.
-		{"2 oignons", "oignons", "aucune entrée « oignon » au lexique"},
 	} {
 		lu := Lit(cas.ligne, p, lexique)
 		if lu.Aliment != cas.aliment {
@@ -86,6 +82,27 @@ func TestLitPoseLaFormeCanonique(t *testing.T) {
 			t.Errorf("« %s » : brut %q, la ligne d'origine ne doit jamais bouger",
 				cas.ligne, lu.Brut)
 		}
+	}
+}
+
+// Une forme que le lexique ne connaît pas n'est pas réécrite : le parser ne
+// devine pas de canonique. L'invariante se vérifie sur le lexique factice, et
+// non sur un trou du lexique embarqué — un référentiel se complète, et un test
+// épinglé sur ce qui lui manque casse le jour où on le comble.
+func TestUneFormeInconnueNestPasReecrite(t *testing.T) {
+	p := packFR(t)
+	lexique, err := LisAliments([]byte(lexiqueFactice), p)
+	if err != nil {
+		t.Fatalf("lecture du lexique : %v", err)
+	}
+
+	lu := Lit("2 courgettes", p, lexique)
+	if lu.Aliment != "courgettes" {
+		t.Errorf("aliment %q, attendu %q : « courgette » n'est pas du lexique",
+			lu.Aliment, "courgettes")
+	}
+	if lu.AlimentTexte != "courgettes" {
+		t.Errorf("texte %q, attendu %q", lu.AlimentTexte, "courgettes")
 	}
 }
 
@@ -149,5 +166,56 @@ func TestLAccordMesureLaSegmentationPasLaResolution(t *testing.T) {
 	if juste, mesure := Compare(attendu, lu, p, false, false).Tout(); !juste || !mesure {
 		t.Errorf("« %s » comptée fausse : lu %q (texte %q), annoté %q",
 			attendu.Brut, lu.Aliment, lu.AlimentTexte, attendu.Aliment)
+	}
+}
+
+// Deux entrées peuvent revendiquer la même forme. Tant que l'index ne portait
+// qu'un booléen, la collision était sans effet : « connue » reste « connue ».
+// Maintenant qu'il porte l'entrée, celle qui gagne emporte le nom canonique —
+// et l'alias d'une entrée tardive détournerait « ail » vers « ail des ours ».
+//
+// La règle : une forme n'est reprise que par un titre strictement plus fort.
+// Un nom bat un pluriel, un pluriel bat un alias, et à titre égal la première
+// entrée lue garde sa forme.
+const lexiqueEnCollision = `{"items":[
+  {"name":"ail","pluralName":"aulx","aliases":[],"label":"Légumes"},
+  {"name":"ail des ours","pluralName":"ails des ours","aliases":["ail"],"label":"Légumes"},
+  {"name":"ciboule","pluralName":"ciboules","aliases":["ciboulette"],"label":"Légumes"},
+  {"name":"ciboulette","pluralName":"ciboulettes","aliases":[],"label":"Herbes"}
+]}`
+
+func TestUneFormeNestReprisQueParUnTitrePlusFort(t *testing.T) {
+	p := packFR(t)
+	lexique, err := LisAliments([]byte(lexiqueEnCollision), p)
+	if err != nil {
+		t.Fatalf("lecture du lexique : %v", err)
+	}
+
+	for _, cas := range []struct{ forme, nom, pourquoi string }{
+		// L'alias d'« ail des ours » arrive après, il ne reprend pas le nom.
+		{"ail", "ail", "« ail » est le nom d'une entrée, pas un alias"},
+		{"ail des ours", "ail des ours", "son propre nom lui reste"},
+		// L'alias de « ciboule » arrive avant le nom d'« ciboulette » : c'est
+		// le nom qui l'emporte, quel que soit l'ordre de lecture.
+		{"ciboulette", "ciboulette", "« ciboulette » est un nom, l'alias cède"},
+		{"ciboule", "ciboule", "son propre nom lui reste"},
+	} {
+		entree, trouve := lexique.Resout(p.Normalise(cas.forme))
+		if !trouve {
+			t.Errorf("« %s » ne se résout pas", cas.forme)
+			continue
+		}
+		if entree.Nom != cas.nom {
+			t.Errorf("« %s » → %q, attendu %q (%s)",
+				cas.forme, entree.Nom, cas.nom, cas.pourquoi)
+		}
+	}
+
+	// La collision ne perd aucune forme : l'appartenance répond comme avant.
+	for _, forme := range []string{"ail", "aulx", "ail des ours", "ails des ours",
+		"ciboule", "ciboules", "ciboulette", "ciboulettes"} {
+		if !lexique.Contient(p.Normalise(forme)) {
+			t.Errorf("« %s » : Contient dit non", forme)
+		}
 	}
 }
