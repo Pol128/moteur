@@ -22,6 +22,22 @@ Pour un pack à soi — une autre langue, une variante locale du lexique —
 `Charge` et `ChargeAliments` lisent depuis des fichiers, `Lis` et `LisAliments`
 depuis des octets.
 
+## Ce module est la seule implémentation du parser
+
+Il a existé une seconde implémentation, en Python, dans la forge privée qui
+produit le corpus et le pack. Elle servait à itérer vite sur les règles, et les
+deux étaient réputées tenues en phase par une mesure croisée que rien ne
+lançait automatiquement.
+
+**Décidé le 19/09/2026 : toute règle de français nouvelle s'écrit ici, et nulle
+part ailleurs.** La version Python est gelée — elle ne reçoit plus de règle et
+ne sert plus que d'oracle de test là-bas. Le prix est assumé : mettre au point
+une règle demande un aller-retour Go et une publication du module, là où le
+Python répondait en trois secondes.
+
+Ce que ça garantit à qui importe ce module : ce qu'il lit est l'implémentation
+maintenue, pas une copie qui suit de loin.
+
 ## Aucune règle de français n'est écrite en Go
 
 Unités, partitifs, fractions, seuils de pluriel, formes irrégulières : tout vient
@@ -29,6 +45,18 @@ du pack. Le code ne connaît pas la langue, il applique ce que le pack déclare.
 C'est ce qui rend une deuxième langue possible sans toucher au moteur —
 et ce que vérifie `TestPackFactice`, qui fait tourner le parser sur une langue
 inventée.
+
+## D'où viennent le pack, le lexique et le jeu annoté
+
+Les trois fichiers publiés ici — `lang/fr.toml`, `data/foods_fr.json`,
+`testdata/fr.txt` — sont produits au contact d'un corpus de recettes qui, lui,
+ne quitte pas la forge : c'est elle qui récolte les pages, mesure ce que le
+pack couvre et annote le jeu de référence à la main. Ce dépôt en embarque un
+**instantané**, republié à chaque version.
+
+Un consommateur du module n'a rien à en savoir : `go get` suffit. Mais le
+plancher d'accord vaut pour l'instantané embarqué, et se remesure quand le jeu
+grossit.
 
 ## Mesure
 
