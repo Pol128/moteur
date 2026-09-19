@@ -821,7 +821,7 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	}
 
 	texte, note, optionnel := ExtraitNotes(texte, p)
-	ligne.Note, ligne.Optionnel = note, optionnel
+	ligne.Optionnel = optionnel
 
 	// « 250 g + 200 g de coulis » : les termes de tête s'ajoutent au dernier,
 	// qui seul porte l'aliment et se lit donc pour la ligne entière.
