@@ -72,6 +72,12 @@ separateurs_intervalle = ["à", "-", "ou"]   # « 2 à 3 gousses » : 552 lignes
 # « 2 oeufs + 1 jaune » ferait trois oeufs. Le séparateur mesuré est
 # typographique ; un séparateur en lettres demanderait une frontière de mot.
 separateurs_addition = ["+"]
+# « Aubergines : 500 g » : la quantité écrite après l'aliment, chez les sites
+# qui mettent les ingrédients en tableau. Sept lignes de l'instance échouaient
+# entièrement dessus. La règle ne se déclenche que si la droite du séparateur
+# est une quantité et rien d'autre — sans quoi « Pour la sauce : 2 cs de crème »
+# ferait de l'en-tête de section l'aliment de la ligne.
+separateurs_inverses = [":"]
 
 # Valeur exacte, écrite en toutes lettres.
 [quantites.litterales]

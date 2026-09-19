@@ -832,19 +832,14 @@ type terme struct {
 // l'aliment *gramme* et aucune unité. C'est une règle du parser, pas un
 // accident — le terme se lit donc par le pack directement.
 func litTerme(texte string, p *Pack) (terme, bool) {
-	quantite, reste := litQuantite(texte, p)
+	quantite, lue, ok := litQuantiteSeule(texte, p)
 	// Un intervalle — « 2 à 3 g + 100 g » — n'a pas de somme évidente : on
 	// rend la main plutôt que de trancher.
-	if !quantite.trouvee || quantite.valeur == nil || quantite.maximum != nil {
+	if !ok || quantite.maximum != nil {
 		return terme{}, false
 	}
-	reste = strings.TrimSpace(reste)
-	if reste == "" {
-		return terme{valeur: *quantite.valeur}, true
-	}
-	lue := p.LireUnite(reste)
 	if lue == nil {
-		return terme{}, false
+		return terme{valeur: *quantite.valeur}, true
 	}
 	return terme{valeur: *quantite.valeur * lue.Facteur, unite: lue.Unite.Cle}, true
 }
@@ -889,6 +884,73 @@ func litAddition(texte string, p *Pack, aliments Aliments) (tete float64, dernie
 	return tete, dernier, true
 }
 
+// --------------------------------------------------------------- motif inversé
+
+// litQuantiteSeule lit un texte qui ne porte **qu'**une quantité, suivie d'au
+// plus une unité. Il rend faux dès qu'il reste autre chose : c'est la condition
+// commune au terme d'addition et au motif inversé, et dans les deux cas ce qui
+// dépasse est un aliment.
+//
+// litCorps ne peut pas servir ici : « une unité sans rien derrière est un
+// aliment », donc « 250 gramme » lu seul rendrait l'aliment *gramme* et aucune
+// unité. Le texte se lit donc par le pack directement.
+func litQuantiteSeule(texte string, p *Pack) (quantiteLue, *LectureUnite, bool) {
+	quantite, reste := litQuantite(texte, p)
+	if !quantite.trouvee || quantite.valeur == nil {
+		return quantiteLue{}, nil, false
+	}
+	reste = strings.TrimSpace(reste)
+	if reste == "" {
+		return quantite, nil, true
+	}
+	lue := p.LireUnite(reste)
+	if lue == nil {
+		return quantiteLue{}, nil, false
+	}
+	return quantite, lue, true
+}
+
+// inverseLu est un motif « Aliment : quantité » reconnu : l'aliment à gauche du
+// séparateur, le texte de la quantité à droite, et l'unité que ce texte porte —
+// nulle quand il n'en porte pas.
+type inverseLu struct {
+	aliment  string
+	quantite string
+	unite    *LectureUnite
+}
+
+// litInverse reconnaît « Aubergines : 500 g », la quantité écrite après
+// l'aliment. Le séparateur vient du pack : c'est une convention d'écriture,
+// pas une règle du moteur.
+//
+// La condition est stricte, et c'est elle qui fait tout le travail : la droite
+// **entière** doit se lire comme une quantité et au plus une unité. Un en-tête
+// de section — « Pour la sauce : 2 cs de crème » — a un aliment derrière son
+// unité, et la règle ne s'y déclenche pas.
+//
+// Le dernier séparateur l'emporte : dans « Pour la sauce : Farine : 100 g »,
+// c'est celui qui isole une quantité.
+func litInverse(texte string, p *Pack) (inverseLu, bool) {
+	if p.motifInverse == nil {
+		return inverseLu{}, false
+	}
+	positions := p.motifInverse.FindAllStringIndex(texte, -1)
+	if positions == nil {
+		return inverseLu{}, false
+	}
+	dernier := positions[len(positions)-1]
+	aliment := strings.Trim(texte[:dernier[0]], finPonctuation)
+	droite := strings.TrimSpace(texte[dernier[1]:])
+	if aliment == "" || droite == "" {
+		return inverseLu{}, false
+	}
+	_, unite, ok := litQuantiteSeule(droite, p)
+	if !ok {
+		return inverseLu{}, false
+	}
+	return inverseLu{aliment: aliment, quantite: droite, unite: unite}, true
+}
+
 // ----------------------------------------------------------------------- lire
 
 // Lit lit une ligne d'ingrédient. N'échoue jamais : une ligne illisible rend un
@@ -902,6 +964,13 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 
 	texte, note, optionnel := ExtraitNotes(texte, p)
 	ligne.Optionnel = optionnel
+
+	// « Aubergines : 500 g » : la quantité est écrite après l'aliment. La
+	// ligne se lit alors sur sa droite seule, et sa gauche est l'aliment.
+	inverse, inversee := litInverse(texte, p)
+	if inversee {
+		texte = inverse.quantite
+	}
 
 	// « 250 g + 200 g de coulis » : les termes de tête s'ajoutent au dernier,
 	// qui seul porte l'aliment et se lit donc pour la ligne entière.
@@ -917,7 +986,16 @@ func Lit(brut string, p *Pack, aliments Aliments) *Ingredient {
 	ligne.Approximative = quantite.approximative
 	ligne.Indefinie = quantite.indefinie
 
-	lu := litCorps(reste, p, quantite.trouvee, aliments, 0)
+	// Sur un motif inversé, ce qui suit la quantité est l'unité et rien
+	// d'autre : litInverse l'a déjà lue, et litCorps rendrait « g » comme
+	// aliment faute d'avoir quoi que ce soit derrière.
+	lu := corps{facteur: 1.0, aliment: inverse.aliment, motif: "aliment_quantite"}
+	if !inversee {
+		lu = litCorps(reste, p, quantite.trouvee, aliments, 0)
+	} else if u := inverse.unite; u != nil {
+		lu.unite, lu.facteur = u.Unite, u.Facteur
+		lu.qualificatifs, lu.uniteTexte = u.Qualificatifs, strings.TrimSpace(reste)
+	}
 	ligne.Unite = lu.unite
 	ligne.UniteTexte = lu.uniteTexte
 	ligne.Qualificatifs = lu.qualificatifs
@@ -1009,6 +1087,13 @@ func (p *Pack) compileMotifs() {
 	if choix := alternative(p.MarquesPluriel); choix != "" {
 		p.motifMarquesPluriel = regexp.MustCompile(`(?i)(?:` + choix + `)`)
 	}
+	p.motifInverse = nil
+	if choix := alternative(p.SeparateursInverses); choix != "" {
+		// Comme l'addition : un séparateur typographique n'a pas de frontière
+		// de mot à défendre.
+		p.motifInverse = regexp.MustCompile(`\s*(?:` + choix + `)\s*`)
+	}
+
 	p.formesPreparation = map[string]bool{}
 	for _, forme := range p.Notes["preparations"] {
 		p.formesPreparation[p.Normalise(forme)] = true

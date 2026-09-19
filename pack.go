@@ -85,6 +85,7 @@ type Pack struct {
 	SeparateurDecimal     string
 	SeparateursIntervalle []string
 	SeparateursAddition   []string
+	SeparateursInverses   []string
 	Apostrophes           []rune // la canonique en tête
 	MarquesPluriel        []string
 
@@ -97,6 +98,7 @@ type Pack struct {
 	motifsIntervalle    []*regexp.Regexp
 	motifMarquesPluriel *regexp.Regexp
 	motifAddition       *regexp.Regexp
+	motifInverse        *regexp.Regexp
 
 	// Les formes qui autorisent à détacher ce qui suit une virgule finale,
 	// préparations et habillage confondus : voir preparationFinale.
@@ -384,6 +386,7 @@ func Construit(brut map[string]any) (*Pack, error) {
 		SeparateurDecimal:     chaineDefaut(quant, "separateur_decimal", ","),
 		SeparateursIntervalle: chaines(quant, "separateurs_intervalle", nil),
 		SeparateursAddition:   chaines(quant, "separateurs_addition", nil),
+		SeparateursInverses:   chaines(quant, "separateurs_inverses", nil),
 		Apostrophes:           ordonnees,
 		MarquesPluriel:        chaines(ortho, "marques_pluriel", nil),
 		formes:                map[string]*Unite{},
