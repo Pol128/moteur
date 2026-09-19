@@ -1,0 +1,103 @@
+#!/bin/sh
+# Couper une version : le tag, la release, et la section datée du journal.
+#
+# Ce geste est resté nulle part pendant un mois. v0.1.1 a tenu du 19/08 au
+# 19/09/2026 pendant que main prenait onze commits, et deux consommateurs ont
+# importé un moteur périmé sans que rien ne le signale. Ce script existe pour
+# que publier soit une commande, et non cinq commandes retrouvées de mémoire.
+#
+# Il ne se lance jamais tout seul : ni la CI, ni la boucle d'agents ne
+# l'appellent. Publier engage des consommateurs, ce n'est pas la conséquence
+# mécanique d'une PR verte — et choisir le numéro est un jugement, pas un
+# calcul. D'où la version en argument, jamais déduite.
+#
+# L'ordre des étapes est un critère, pas un détail : tout ce qui peut échouer
+# sans rien écrire ni rien joindre passe d'abord, la suite de tests ensuite,
+# les écritures et le réseau en dernier. Un refus laisse donc le dépôt
+# exactement comme il était.
+#
+# Volontairement bête, comme les autres scripts de la maison : il doit pouvoir
+# être lu en entier avant d'être exécuté.
+set -eu
+
+JOURNAL=CHANGELOG.md
+ENTETE='## À paraître'
+
+usage() {
+	echo "usage : ./publier vX.Y.Z   (ex. ./publier v0.3.0)" >&2
+	exit 1
+}
+
+# 1. L'argument. La forme est celle du tag tel qu'il existera : un numéro nu ou
+#    un suffixe de pré-version échoue comme un argument absent.
+version=${1:-}
+if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+	usage
+fi
+
+# 2. Le tag ne doit pas exister. Republier un numéro déjà pris réécrirait sous
+#    les pieds de qui l'a déjà importé.
+if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+	echo "$version existe déjà parmi les tags" >&2
+	exit 1
+fi
+
+# 3. L'arbre de travail. Ce qui est publié doit être ce qui est commité.
+if [ -n "$(git status --porcelain)" ]; then
+	echo "arbre de travail sale : commiter ou remiser avant de publier" >&2
+	git status --short >&2
+	exit 1
+fi
+
+# 4. La section « À paraître » : c'est elle qui devient le corps du tag et les
+#    notes de la release. On ne devine pas où elle commence — si l'en-tête a
+#    bougé, mieux vaut échouer que réécrire le journal au mauvais endroit.
+ligne_entete=$(grep -n "^$ENTETE\$" "$JOURNAL" | head -1 | cut -d: -f1)
+if [ -z "$ligne_entete" ]; then
+	echo "en-tête « $ENTETE » introuvable dans $JOURNAL" >&2
+	exit 1
+fi
+
+# Ce qui suit l'en-tête, jusqu'à la section de version suivante.
+corps=$(tail -n +"$((ligne_entete + 1))" "$JOURNAL" | sed '/^## /,$d')
+if [ -z "$(printf '%s' "$corps" | tr -d '[:space:]')" ]; then
+	echo "section « $ENTETE » vide : rien à publier" >&2
+	exit 1
+fi
+
+# 5. La suite. Verte avant toute écriture — et après les quatre contrôles
+#    ci-dessus, qui coûtent une milliseconde là où elle coûte des secondes.
+echo "→ go test ./..."
+if ! go test ./...; then
+	echo "suite de tests rouge : rien n'est publié" >&2
+	exit 1
+fi
+
+# 6. Le journal : « À paraître » prend sa date et son numéro, une « À paraître »
+#    vide est remise au-dessus.
+echo "→ $JOURNAL"
+tmp=$(mktemp)
+{
+	head -n "$((ligne_entete - 1))" "$JOURNAL"
+	printf '%s\n\n## %s — %s\n' "$ENTETE" "$version" "$(date +%F)"
+	tail -n +"$((ligne_entete + 1))" "$JOURNAL"
+} >"$tmp"
+mv "$tmp" "$JOURNAL"
+git add "$JOURNAL"
+git commit -q -m "chore(journal) : $version"
+
+# 7. Le tag annoté porte la section : c'est lui que `git tag -n20` rend, et
+#    c'est de lui que les sections d'avant v0.2.0 ont été reprises.
+#    --cleanup=whitespace n'est pas décoratif : par défaut git retire du
+#    message les lignes qui commencent par « # », et la section y perdrait
+#    tous ses sous-titres markdown.
+echo "→ tag $version"
+git tag -a --cleanup=whitespace "$version" -m "$version" -m "$corps"
+git push origin HEAD
+git push origin "$version"
+
+# 8. La release, avec les mêmes notes.
+echo "→ release $version"
+printf '%s\n' "$corps" | gh release create "$version" --title "$version" --notes-file -
+
+echo "✓ $version publiée"
