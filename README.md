@@ -139,6 +139,16 @@ relèvent par une commande :
 go test -run TestPlanchersParCategorie -maj-planchers
 ```
 
+## Versions
+
+Ce qui a changé d'une version à l'autre est dans
+[CHANGELOG.md](CHANGELOG.md). Sa section « À paraître », tout en haut, porte ce
+qui est sur `main` sans être publié : non vide alors qu'aucun tag n'a suivi,
+elle donne la dérive à lire.
+
+Les versions se coupent à la main — `./publier vX.Y.Z` —, jamais par la CI :
+publier engage ceux qui importent le module.
+
 ## En ligne de commande
 
 ```sh
