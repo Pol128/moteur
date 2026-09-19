@@ -12,6 +12,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -92,6 +93,22 @@ func TestJeuDeReference(t *testing.T) {
 	}
 
 	part, desaccords := Accord(lignes, p, lecteur(t, p))
+
+	// L'ensemble épinglé et le taux parlent du même parser : même lecteur,
+	// même liste de désaccords. Le premier dit lesquelles, le second combien.
+	epingles, err := ChargeDesaccords(filepath.Join("testdata", "desaccords.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	apparus, disparus := CompareDesaccords(epingles, BrutsDesaccords(desaccords))
+	if len(apparus) > 0 || len(disparus) > 0 {
+		t.Errorf("le jeu de référence a bougé — %d ligne(s) en désaccord nouveau, "+
+			"%d ligne(s) qui n'y sont plus.\n  nouvelles :%s\n  corrigées :%s\n"+
+			"Si le changement est voulu, régénérer :\n  %s",
+			len(apparus), len(disparus), liste(apparus), liste(disparus),
+			CommandeDesaccords)
+	}
+
 	if math.Round(part*1000)/1000 < plancher {
 		detail := ""
 		for i, d := range desaccords {
@@ -218,4 +235,143 @@ func TestResolutionDuJeuDeReference(t *testing.T) {
 	}
 	t.Logf("résolution %.1f %% sur %d lignes (plancher %.1f %%)",
 		part*100, len(lignes), plancher*100)
+}
+
+// ------------------------------------------- les désaccords épinglés
+
+// Le taux dit combien de lignes sont fausses, jamais lesquelles. Une
+// modification qui en corrige cinq et en casse cinq autres laisse 85,0 % et le
+// test vert : c'est une non-régression du chiffre, pas des lignes. Le fichier
+// épinglé ferme ce trou, et il se lit comme `fr.txt` — les lignes `#` et les
+// lignes vides sont du commentaire.
+func TestLectureDesDesaccordsEpingles(t *testing.T) {
+	fichier := "# Désaccords épinglés.\n" +
+		"# Régénérer : " + CommandeDesaccords + "\n" +
+		"\n" +
+		"140 g de farine type 55\n" +
+		"140 g de farine type 55\n" +
+		"Sel ou sel fin\n"
+
+	lus := AnalyseDesaccords(fichier)
+	attendus := []string{
+		"140 g de farine type 55",
+		"140 g de farine type 55",
+		"Sel ou sel fin",
+	}
+	if len(lus) != len(attendus) {
+		t.Fatalf("%d lignes lues, attendu %d : %q", len(lus), len(attendus), lus)
+	}
+	for i := range attendus {
+		if lus[i] != attendus[i] {
+			t.Errorf("ligne %d : %q, attendu %q", i, lus[i], attendus[i])
+		}
+	}
+}
+
+// Les deux sens, sur entrées fabriquées — ni `fr.txt`, ni l'état réel du
+// parser. Une ligne qui se met à échouer doit être signalée ; une ligne qui
+// cesse d'échouer aussi, sans quoi un fichier de manquements connus qu'on ne
+// met jamais à jour redevient du bruit en trois mois.
+func TestComparaisonDesDesaccordsDansLesDeuxSens(t *testing.T) {
+	epingles := []string{"Sel ou sel fin", "Une pincée de sel"}
+
+	// Rien n'a bougé : rien à dire, et l'ordre d'arrivée n'y change rien.
+	apparus, disparus := CompareDesaccords(epingles, []string{"Une pincée de sel", "Sel ou sel fin"})
+	if len(apparus) != 0 || len(disparus) != 0 {
+		t.Errorf("listes égales : apparus %q, disparus %q", apparus, disparus)
+	}
+
+	// Une ligne aujourd'hui correcte se met à échouer.
+	apparus, disparus = CompareDesaccords(epingles, append([]string{"3 tomates"}, epingles...))
+	if len(apparus) != 1 || apparus[0] != "3 tomates" || len(disparus) != 0 {
+		t.Errorf("ligne apparue : apparus %q, disparus %q", apparus, disparus)
+	}
+
+	// Une ligne épinglée cesse d'échouer : le fichier n'est plus à jour.
+	apparus, disparus = CompareDesaccords(epingles, []string{"Sel ou sel fin"})
+	if len(disparus) != 1 || disparus[0] != "Une pincée de sel" || len(apparus) != 0 {
+		t.Errorf("ligne disparue : apparus %q, disparus %q", apparus, disparus)
+	}
+}
+
+// `brut` n'est pas une clé unique : « 140 g de farine type 55 » revient trois
+// fois dans `fr.txt`, et les 43 désaccords ne portent que 40 valeurs
+// distinctes. La comparaison se fait donc avec multiplicité — sans quoi une
+// régression faisant tomber cette ligne de 3 désaccords à 1 passerait
+// inaperçue, exactement le trou qu'on vient boucher.
+func TestComparaisonDesDesaccordsCompteLesDoublons(t *testing.T) {
+	trois := []string{"140 g de farine", "140 g de farine", "140 g de farine"}
+
+	apparus, disparus := CompareDesaccords(trois, trois[:1])
+	if len(disparus) != 2 || len(apparus) != 0 {
+		t.Errorf("3 désaccords tombés à 1 : apparus %q, disparus %q", apparus, disparus)
+	}
+
+	apparus, disparus = CompareDesaccords(trois[:1], trois)
+	if len(apparus) != 2 || len(disparus) != 0 {
+		t.Errorf("1 désaccord monté à 3 : apparus %q, disparus %q", apparus, disparus)
+	}
+}
+
+// Un garde-fou qui disparaît avec son fichier ne garde rien : absent, il dit
+// quoi lancer pour le produire plutôt que de se taire.
+func TestFichierDesaccordsAbsentNommeLaRegeneration(t *testing.T) {
+	_, err := ChargeDesaccords(filepath.Join(t.TempDir(), "desaccords.txt"))
+	if err == nil {
+		t.Fatal("fichier absent : aucune erreur")
+	}
+	if !strings.Contains(err.Error(), CommandeDesaccords) {
+		t.Errorf("erreur %q, attendu la commande de régénération", err)
+	}
+}
+
+// Ce que la régénération écrit doit être relu tel quel par le test : l'entête
+// porte la commande, les lignes sont triées par ordre d'octets, et les
+// doublons restent.
+func TestTexteDesaccordsPorteSonEnteteEtSesDoublons(t *testing.T) {
+	texte := TexteDesaccords([]Desaccord{
+		{Brut: "Sel ou sel fin"},
+		{Brut: "140 g de farine"},
+		{Brut: "Sel ou sel fin"},
+	})
+	if !strings.Contains(texte, CommandeDesaccords) {
+		t.Errorf("entête sans la commande de régénération :\n%s", texte)
+	}
+	if !strings.HasPrefix(texte, "#") {
+		t.Errorf("pas d'entête en # :\n%s", texte)
+	}
+
+	relus := AnalyseDesaccords(texte)
+	attendus := []string{"140 g de farine", "Sel ou sel fin", "Sel ou sel fin"}
+	if len(relus) != len(attendus) {
+		t.Fatalf("%d lignes relues, attendu %d : %q", len(relus), len(attendus), relus)
+	}
+	for i := range attendus {
+		if relus[i] != attendus[i] {
+			t.Errorf("ligne %d : %q, attendu %q", i, relus[i], attendus[i])
+		}
+	}
+
+	// Régénérer deux fois de suite ne doit rien changer au fichier.
+	if encore := TexteDesaccords([]Desaccord{{Brut: "140 g de farine"},
+		{Brut: "Sel ou sel fin"}, {Brut: "Sel ou sel fin"}}); encore != texte {
+		t.Error("la régénération n'est pas idempotente")
+	}
+}
+
+// liste met une ligne par entrée, tronquée à vingt, pour un message d'erreur
+// qui tient à l'écran.
+func liste(bruts []string) string {
+	if len(bruts) == 0 {
+		return " aucune"
+	}
+	detail := ""
+	for i, brut := range bruts {
+		if i >= 20 {
+			detail += "\n    …"
+			break
+		}
+		detail += "\n    " + brut
+	}
+	return detail
 }
