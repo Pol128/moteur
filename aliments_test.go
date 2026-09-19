@@ -219,3 +219,41 @@ func TestUneFormeNestReprisQueParUnTitrePlusFort(t *testing.T) {
 		}
 	}
 }
+
+// Les aliments les plus courants du corpus doivent être des entrées, pas des
+// formes que le parser laisse passer faute de les connaître. Le lexique
+// embarqué connaissait « oignon jaune », « oignon rouge » et « oignon vert »,
+// mais pas « oignon » — l'aliment le plus fréquent du jeu annoté.
+//
+// Le test regarde les deux bouts, et c'est nécessaire : `Aliment` rend le
+// texte de la ligne quand rien ne se résout, donc « farine » y apparaîtrait
+// même sans entrée au référentiel. C'est la résolution qui est vérifiée ici,
+// pas la recopie.
+func TestLesAlimentsDeBaseDuCorpusSeResolvent(t *testing.T) {
+	p, lexique, err := FR()
+	if err != nil {
+		t.Fatalf("FR() : %v", err)
+	}
+
+	for _, cas := range []struct{ ligne, aliment string }{
+		{"2 oignons", "oignon"},
+		{"200 g de farine", "farine"},
+		{"20 g de menthe", "menthe"},
+		{"1 cuillère à café de curcuma", "curcuma"},
+		{"1 cuillère à café d'origan", "origan"},
+	} {
+		entree, trouve := lexique.Resout(p.Normalise(cas.aliment))
+		if !trouve {
+			t.Errorf("« %s » n'est pas une entrée du référentiel", cas.aliment)
+			continue
+		}
+		if entree.Nom != cas.aliment {
+			t.Errorf("« %s » se résout vers %q, attendu %q",
+				cas.aliment, entree.Nom, cas.aliment)
+		}
+		if lu := Lit(cas.ligne, p, lexique); lu.Aliment != cas.aliment {
+			t.Errorf("« %s » : aliment %q, attendu %q",
+				cas.ligne, lu.Aliment, cas.aliment)
+		}
+	}
+}
