@@ -391,3 +391,63 @@ func TestAdditionRefuseeQuandLesUnitesDifferent(t *testing.T) {
 	verifie(t, "250 g + 2 cuillères à soupe de crème fraîche",
 		"250 · gramme ·  · + 2 cuillères à soupe de crème fraîche")
 }
+
+// ------------- MOTEUR-1 : la préparation qui suit une virgule terminale
+
+// Le moteur versait déjà dans la note ce qui est entre parenthèses ; 20 lignes
+// du corpus écrivent la même chose après une virgule finale — « oignon, haché
+// finement » —, et la préparation restait collée à l'aliment.
+//
+// La virgule n'est pas un délimiteur pour autant : elle sépare aussi bien deux
+// aliments. Ce qui autorise le détachement, c'est que tout ce qui la suit soit
+// fait des formes de préparation déclarées par le pack.
+func TestPreparationApresVirguleFinaleVaEnNote(t *testing.T) {
+	cas := []struct{ ligne, attendu, note string }{
+		{"2 oignons, hachés finement", "2 ·  ·  · oignons", "hachés finement"},
+		{"1 gousse d'ail, hachées finement", "1 · gousse · d' · ail", "hachées finement"},
+		{"quelques feuilles de basilic, déchirées", "3 · feuille · de · basilic", "déchirées"},
+		// Seule la dernière virgule est une frontière : « mondées » n'est pas
+		// détaché, il appartient au nom tel que la source l'écrit.
+		{"3 tomates mondées, épépinées", "3 ·  ·  · tomates mondées", "épépinées"},
+	}
+	for _, c := range cas {
+		lu := verifie(t, c.ligne, c.attendu)
+		if lu.Note != c.note {
+			t.Errorf("« %s » : note %q, attendu %q", c.ligne, lu.Note, c.note)
+		}
+	}
+}
+
+// Le garde-fou, et la raison d'être de la liste : 202 lignes du corpus n'ont
+// pas le moindre chiffre et énumèrent deux aliments séparés par une virgule.
+// Sans la liste, le second partirait en note.
+func TestLaVirguleQuiSepareDeuxAlimentsNEstPasUneNote(t *testing.T) {
+	cas := []struct{ ligne, attendu string }{
+		{"Sel, poivre", "∅ ·  ·  · Sel, poivre"},
+		{"quelques grains de café, chocolat noir", "3 · grain · de · café, chocolat noir"},
+	}
+	for _, c := range cas {
+		lu := verifie(t, c.ligne, c.attendu)
+		if lu.Note != "" {
+			t.Errorf("« %s » : note %q, attendu vide", c.ligne, lu.Note)
+		}
+	}
+}
+
+// Hors périmètre, et c'est voulu : le qualificatif sans ponctuation. Aucune
+// règle mécanique ne distingue « beurre fondu » de « crème fraîche liquide »,
+// qui est juste — c'est du lexique, pas de la grammaire.
+func TestSansVirguleRienNeBouge(t *testing.T) {
+	verifie(t, "crème fraîche liquide", "∅ ·  ·  · crème fraîche liquide")
+	verifie(t, "vinaigre de vin blanc", "∅ ·  ·  · vinaigre de vin blanc")
+	verifie(t, "100 g de gruyère râpé", "100 · gramme · de · gruyère râpé")
+}
+
+// Les deux écritures sur la même ligne : la note tirée de la parenthèse et
+// celle tirée de la virgule se cumulent avec le séparateur déjà en place.
+func TestLesDeuxNotesSeCumulent(t *testing.T) {
+	lu := verifie(t, "2 oignons (rouges), hachés finement", "2 ·  ·  · oignons")
+	if lu.Note != "rouges ; hachés finement" {
+		t.Errorf("note : %q, attendu %q", lu.Note, "rouges ; hachés finement")
+	}
+}
