@@ -251,6 +251,19 @@ func TestContenanceApresLeContenant(t *testing.T) {
 	lu = verifie(t, "1 gigot d'agneau de 2,5 kg", "1 ·  ·  · gigot d'agneau")
 	verifieNote(t, lu, "2,5 kg")
 	verifieMotif(t, lu, "aliment_mesure_terminale")
+
+	// Le trait d'union colle l'unité au nombre : « de 2,5-kg ». La quantité
+	// lue, il reste « -kg », qu'aucune unité ne nomme tant qu'on ne l'a pas
+	// rogné — sans quoi la mesure resterait dans l'aliment.
+	lu = verifie(t, "1 gigot d'agneau de 2,5-kg", "1 ·  ·  · gigot d'agneau")
+	verifieNote(t, lu, "2,5 kg")
+
+	// Contenances imbriquées : « 4 sachets » est la contenance de la boîte, et
+	// « 90 g » celle du sachet. La note les chaîne, du contenant au contenu —
+	// c'est le seul emploi qui justifie la récursion de litContenance.
+	lu = verifie(t, "1 boîte de 4 sachets de 90 g de pépites",
+		"1 · boite · de · pépites")
+	verifieNote(t, lu, "4 sachets ; 90 g")
 }
 
 func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
