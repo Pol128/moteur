@@ -264,6 +264,15 @@ func TestContenanceApresLeContenant(t *testing.T) {
 	lu = verifie(t, "1 boîte de 4 sachets de 90 g de pépites",
 		"1 · boite · de · pépites")
 	verifieNote(t, lu, "4 sachets ; 90 g")
+
+	// La frontière des deux règles, épinglée : « de 140 g » derrière un
+	// contenant déjà retenu reste dans l'aliment. La contenance se lit entre
+	// le contenant et l'aliment, la mesure terminale à défaut d'unité devant ;
+	// ni l'une ni l'autre ne couvre « contenant + aliment + poids ». Aucune
+	// ligne du corpus relevé par la tâche ne le demande — l'y étendre est une
+	// décision qui se prend dans sa propre tâche, pas un oubli.
+	lu = verifie(t, "1 boîte de thon de 140 g", "1 · boite · de · thon de 140 g")
+	verifieNote(t, lu, "")
 }
 
 func TestUnPartitifSeulNeDeclencheRien(t *testing.T) {
