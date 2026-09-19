@@ -1,0 +1,5 @@
+# Outillage Claude Code, activé par `claude plugin install --scope local` : il
+# est personnel et ne doit laisser aucune trace ici (outils-claude, règle
+# zéro-trace). Ce dépôt est public : un contributeur qui le clone ne voit pas
+# l'agent, et `git status` reste propre pendant que la boucle travaille.
+.claude/
