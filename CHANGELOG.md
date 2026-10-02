@@ -18,6 +18,10 @@ sections d'avant `v0.2.0` sont reprises des messages des tags annotés.
   « 100 g de sucre glace » donnait `Aliment = "sucre en poudre"`
 - « fromage blanc » devient le nom canonique de l'entrée « quark », qui reste
   en alias. « 200 g de fromage blanc » donnait `Aliment = "quark"`
+- « farine » et « eau » ont désormais un pluriel identique au nom, comme les
+  autres aliments qu'on ne compte pas. Un consommateur qui accorde l'aliment à
+  la quantité sur le pluriel affichait « 200 g farines » et « 50 cl eaux ».
+  « farines » et « eaux » restent lisibles, en alias
 
 ## v0.2.0 — 2026-09-19
 
