@@ -2,7 +2,7 @@
  "source": "https://github.com/Rouzax/MealieSync",
  "licence": "MIT",
  "copyright": "Copyright (c) 2025 Rouzax",
- "note": "Extrait de Data/fr/Foods, fusionné et allégé de la description, puis complété pour ce projet : les entrées sans « id » sont les nôtres, celles qui portent un « id » viennent de MealieSync et sont redistribuées telles quelles sous licence MIT.",
+ "note": "Extrait de Data/fr/Foods, fusionné et allégé de la description, puis complété pour ce projet : les entrées sans « id » sont les nôtres, celles qui portent un « id » viennent de MealieSync et sont redistribuées sous licence MIT, telles quelles sauf deux. L'entrée 91b7d5da-… perd ses alias « sucre glace » et « bloemsuiker », partis vers une entrée « sucre glace » à nous : bloemsuiker est le sucre glace en néerlandais, que la traduction « sucre en poudre » donnait pour un autre produit. L'entrée 9c16f555-… prend « fromage blanc » pour nom et garde « quark » en alias : le mot n'apparaît dans aucune ligne d'un corpus français de 36 206 recettes, contre 529 pour « fromage blanc ».",
  "items": [
   {
    "id": "d20b7d1e-efa9-48d9-94d6-1bf418693778",
@@ -8360,10 +8360,7 @@
    "id": "91b7d5da-8c63-4094-ab70-9ac83c8796c5",
    "name": "sucre en poudre",
    "pluralName": "sucre en poudre",
-   "aliases": [
-    "sucre glace",
-    "bloemsuiker"
-   ],
+   "aliases": [],
    "label": "Produits de boulangerie"
   },
   {
@@ -8737,10 +8734,10 @@
   },
   {
    "id": "9c16f555-1759-4b3f-8367-7dc36eaeba4d",
-   "name": "quark",
-   "pluralName": "quark",
+   "name": "fromage blanc",
+   "pluralName": "fromage blanc",
    "aliases": [
-    "fromage blanc"
+    "quark"
    ],
    "label": "Produits laitiers"
   },
@@ -12465,6 +12462,14 @@
    "pluralName": "crème épaisse",
    "aliases": [],
    "label": "Produits laitiers"
+  },
+  {
+   "name": "sucre glace",
+   "pluralName": "sucre glace",
+   "aliases": [
+    "bloemsuiker"
+   ],
+   "label": "Produits de boulangerie"
   }
  ],
  "version": "MealieSync main@8ff67a466527 (2026-07-09)"

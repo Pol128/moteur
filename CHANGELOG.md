@@ -12,6 +12,13 @@ sections d'avant `v0.2.0` sont reprises des messages des tags annotés.
 
 ## À paraître
 
+### Référentiel
+- « sucre glace » devient une entrée à part : il était un alias de « sucre en
+  poudre », traduction fautive du néerlandais *bloemsuiker*.
+  « 100 g de sucre glace » donnait `Aliment = "sucre en poudre"`
+- « fromage blanc » devient le nom canonique de l'entrée « quark », qui reste
+  en alias. « 200 g de fromage blanc » donnait `Aliment = "quark"`
+
 ## v0.2.0 — 2026-09-19
 
 Première version depuis que ce module est la seule implémentation du parser

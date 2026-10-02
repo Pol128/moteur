@@ -6,7 +6,10 @@ package moteur
 // et « 3 oignon » doivent désigner la même entrée pour qu'une liste de courses,
 // un calcul de calories ou une recherche par ingrédient tienne debout.
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 // Deux entrées suffisent à décrire le contrat : une qui porte un pluriel
 // distinct, une qui porte un alias. Le lexique embarqué sert ensuite à vérifier
@@ -254,6 +257,77 @@ func TestLesAlimentsDeBaseDuCorpusSeResolvent(t *testing.T) {
 		if lu := Lit(cas.ligne, p, lexique); lu.Aliment != cas.aliment {
 			t.Errorf("« %s » : aliment %q, attendu %q",
 				cas.ligne, lu.Aliment, cas.aliment)
+		}
+	}
+}
+
+// Deux entrées reprises de MealieSync, référentiel d'origine néerlandaise,
+// donnaient un mauvais aliment à des lignes françaises. *Bloemsuiker* est le
+// sucre glace, et l'entrée avait été traduite « sucre en poudre », qui désigne
+// en français un autre produit : c'est une erreur de fait, pas un synonyme.
+//
+// Le test regarde les deux bouts, comme celui des aliments de base : sans
+// entrée, `Aliment` recopierait « sucre glace » de la ligne et passerait.
+func TestLeSucreGlaceNestPasLeSucreEnPoudre(t *testing.T) {
+	p, lexique, err := FR()
+	if err != nil {
+		t.Fatalf("FR() : %v", err)
+	}
+
+	for _, cas := range []struct{ ligne, forme, aliment string }{
+		{"100 g de sucre glace", "sucre glace", "sucre glace"},
+		{"100 g de sucre en poudre", "sucre en poudre", "sucre en poudre"},
+	} {
+		entree, trouve := lexique.Resout(p.Normalise(cas.forme))
+		if !trouve {
+			t.Errorf("« %s » n'est pas une entrée du référentiel", cas.forme)
+		} else if entree.Nom != cas.aliment {
+			t.Errorf("« %s » se résout vers %q, attendu %q",
+				cas.forme, entree.Nom, cas.aliment)
+		}
+		if lu := Lit(cas.ligne, p, lexique); lu.Aliment != cas.aliment {
+			t.Errorf("« %s » : aliment %q, attendu %q",
+				cas.ligne, lu.Aliment, cas.aliment)
+		}
+	}
+}
+
+// « quark » n'apparaît dans aucune des 324 572 lignes du corpus crawlé, contre
+// 529 pour « fromage blanc » : c'est le mot français qui devient le nom
+// canonique, et « quark » reste lisible en alias.
+func TestLeFromageBlancEstLeNomCanonique(t *testing.T) {
+	p, lexique, err := FR()
+	if err != nil {
+		t.Fatalf("FR() : %v", err)
+	}
+
+	for _, ligne := range []string{"200 g de fromage blanc", "250 g de quark"} {
+		if lu := Lit(ligne, p, lexique); lu.Aliment != "fromage blanc" {
+			t.Errorf("« %s » : aliment %q, attendu %q", ligne, lu.Aliment, "fromage blanc")
+		}
+	}
+}
+
+// Un nom corrigé ne doit plus traîner en alias d'une autre entrée. La règle des
+// collisions le ferait gagner quand même — un nom bat un alias —, mais le
+// lexique porterait deux lectures concurrentes de la même forme, et la
+// première entrée qui changerait d'ordre ou de titre ramènerait l'erreur.
+func TestAucunAliasNeConcurrenceUnNomCorrige(t *testing.T) {
+	var donnees struct {
+		Items []struct {
+			Name    string   `json:"name"`
+			Aliases []string `json:"aliases"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(alimentsFRJSON, &donnees); err != nil {
+		t.Fatalf("lecture du lexique embarqué : %v", err)
+	}
+
+	for _, item := range donnees.Items {
+		for _, alias := range item.Aliases {
+			if alias == "sucre glace" || alias == "fromage blanc" {
+				t.Errorf("« %s » est encore un alias de « %s »", alias, item.Name)
+			}
 		}
 	}
 }
