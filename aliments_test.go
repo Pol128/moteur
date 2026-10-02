@@ -331,3 +331,33 @@ func TestAucunAliasNeConcurrenceUnNomCorrige(t *testing.T) {
 		}
 	}
 }
+
+// Un aliment qu'on ne compte pas a pour pluriel son nom, comme « sel »,
+// « sucre » ou « lait » : un consommateur qui accorde l'aliment à la quantité
+// lit le pluriel du lexique, et « 200 g de farine » s'affichait « 200 g
+// farines ». L'ancien pluriel reste une forme lisible, en alias.
+func TestLesNonComptablesOntUnPlurielIdentiqueAuNom(t *testing.T) {
+	p, lexique, err := FR()
+	if err != nil {
+		t.Fatalf("FR() : %v", err)
+	}
+
+	for _, cas := range []struct{ nom, ancienPluriel string }{
+		{"farine", "farines"},
+		{"eau", "eaux"},
+	} {
+		entree, trouve := lexique.Resout(p.Normalise(cas.nom))
+		if !trouve {
+			t.Errorf("« %s » n'est pas une entrée du référentiel", cas.nom)
+		} else if entree.Nom != cas.nom || entree.Pluriel != cas.nom {
+			t.Errorf("« %s » se résout vers %q, pluriel %q, attendu %q pour les deux",
+				cas.nom, entree.Nom, entree.Pluriel, cas.nom)
+		}
+		if entree, trouve := lexique.Resout(p.Normalise(cas.ancienPluriel)); !trouve {
+			t.Errorf("« %s » ne se résout plus", cas.ancienPluriel)
+		} else if entree.Nom != cas.nom {
+			t.Errorf("« %s » se résout vers %q, attendu %q",
+				cas.ancienPluriel, entree.Nom, cas.nom)
+		}
+	}
+}
